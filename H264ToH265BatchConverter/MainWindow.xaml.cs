@@ -25,47 +25,6 @@ namespace H264ToH265BatchConverter
             };
         }
 
-
-        private void btnConvert_Click(object sender, RoutedEventArgs e)
-        {
-            string input;
-            string output;
-
-            //OpenFileDialog openFileDialog = new();
-            //openFileDialog.Title = "Chosse file to convert";
-            //openFileDialog.ShowDialog(this);
-
-            //input = openFileDialog.FileName;
-
-            //SaveFileDialog saveFileDialog = new();
-            //saveFileDialog.Title = "Chosse destination file";
-            //saveFileDialog.ShowDialog(this);
-
-            //output = saveFileDialog.FileName;
-
-            input = @"C:\Users\Lakio\Desktop\test_video_h264.mp4";
-            output = @"C:\Users\Lakio\Desktop\test_video_h265.mp4";
-
-            if (string.IsNullOrWhiteSpace(input) || string.IsNullOrWhiteSpace(output))
-            {
-                System.Windows.MessageBox.Show("At least one of the two files path is empty, please select correct path.");
-                return;
-            }
-
-            tbLogs.Clear();
-
-            H264Converter.ToH265(input, output);
-
-            //if (!H264Converter.ToH265(input, output))
-            //{
-            //    MessageBox.Show("Convertion failed");
-            //}
-            //else
-            //{
-            //    MessageBox.Show("Convertion succeed");
-            //}
-        }
-
         private void btnConvertMulti_Click(object sender, RoutedEventArgs e)
         {
             string inputFolder;
@@ -98,18 +57,20 @@ namespace H264ToH265BatchConverter
                 ConvertDirectory(dir, wk);
 
                 watch.Stop();
-                TotalMinutes = watch.Elapsed.TotalMinutes;
+                TotalMinutes = Math.Round(watch.Elapsed.TotalMinutes,2);
             };
 
             wk.ProgressChanged += (p, o) =>
             {
-                tbLogs.Dispatcher.Invoke(() => { tbLogs.Text += o.UserState + Environment.NewLine; tbLogs.ScrollToEnd(); });
+                tbLogs.Dispatcher.Invoke(() => { Log((string)o.UserState); });
             };
 
             wk.RunWorkerCompleted += (s, e) =>
             {
-                tbLogs.Text += "Total time in minutes : " + TotalMinutes + Environment.NewLine;
+                Log("Process done. Total time in minutes : " + TotalMinutes);
             };
+
+            Log("Processing started");
 
             wk.RunWorkerAsync();
         }
@@ -146,6 +107,11 @@ namespace H264ToH265BatchConverter
                     ConvertDirectory(d, wk);
                 }
             }
+        }
+
+        private void Log(string message)
+        {
+            tbLogs.Text += "[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine;
         }
     }
 }
