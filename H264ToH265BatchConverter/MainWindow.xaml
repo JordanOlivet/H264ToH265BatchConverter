@@ -5,8 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:H264ToH265BatchConverter"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="720" Width="1280">
     <Grid>
-
+        <Button x:Name="btnConvert" Click="btnConvert_Click" Width="100" Height="50" Margin="10,10,0,0" Content="Convert" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+        <Button x:Name="btnConvertMulti" Click="btnConvertMulti_Click" Width="100" Height="50" Margin="115,10,0,0" Content="Convert Multi" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+        <TextBox x:Name="tbLogs" Margin="10,65,10,10" VerticalScrollBarVisibility="Auto"/>
     </Grid>
 </Window>
