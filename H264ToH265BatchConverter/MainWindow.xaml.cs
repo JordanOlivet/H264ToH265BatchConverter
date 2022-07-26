@@ -25,24 +25,7 @@ namespace H264ToH265BatchConverter
             };
         }
 
-        private void btnConvertMulti_Click(object sender, RoutedEventArgs e)
-        {
-            string inputFolder;
-
-            FolderBrowserDialog openFolderDialog = new();
-            openFolderDialog.ShowDialog();
-
-            inputFolder = openFolderDialog.SelectedPath;
-
-            if(Directory.Exists(inputFolder))
-            {
-                DirectoryInfo dir = new(inputFolder);
-
-                ConvertInBackground(dir);
-            }
-        }
-
-        private void ConvertInBackground(DirectoryInfo dir)
+        private void ConvertFolderInBackground(DirectoryInfo dir, bool recursive = true)
         {
             BackgroundWorker wk = new()
             {
@@ -54,7 +37,7 @@ namespace H264ToH265BatchConverter
                 Stopwatch watch = new();
                 watch.Start();
 
-                ConvertDirectory(dir, wk);
+                ConvertDirectory(dir, wk, recursive);
 
                 watch.Stop();
                 TotalMinutes = Math.Round(watch.Elapsed.TotalMinutes,2);
@@ -75,7 +58,40 @@ namespace H264ToH265BatchConverter
             wk.RunWorkerAsync();
         }
 
-        private void ConvertDirectory(DirectoryInfo dir, BackgroundWorker wk = null)
+        private void ConvertFileInBackground(FileInfo file)
+        {
+            BackgroundWorker wk = new()
+            {
+                WorkerReportsProgress = true
+            };
+
+            wk.DoWork += (s, e) =>
+            {
+                Stopwatch watch = new();
+                watch.Start();
+
+                ConvertFile(file, wk);
+
+                watch.Stop();
+                TotalMinutes = Math.Round(watch.Elapsed.TotalMinutes, 2);
+            };
+
+            wk.ProgressChanged += (p, o) =>
+            {
+                tbLogs.Dispatcher.Invoke(() => { Log((string)o.UserState); });
+            };
+
+            wk.RunWorkerCompleted += (s, e) =>
+            {
+                Log("Process done. Total time in minutes : " + TotalMinutes);
+            };
+
+            Log("Processing started");
+
+            wk.RunWorkerAsync();
+        }
+
+        private void ConvertDirectory(DirectoryInfo dir, BackgroundWorker wk = null, bool recursive = true)
         {
             if (dir != null)
             {
@@ -84,34 +100,93 @@ namespace H264ToH265BatchConverter
 
                 foreach (var f in files)
                 {
-                    if (f.Extension.ToLower() != ".mp4" && f.Extension.ToLower() != ".mkv") { continue; }
-                    
-                    string input = f.FullName;
-                    string output = f.FullName.Replace(f.Extension, string.Empty) + "_h265" + f.Extension;
+                    ConvertFile(f, wk);
+                }
 
-                    if (H264Converter.ToH265(input, output, false))
+                if (recursive)
+                {
+                    foreach (var d in dirs)
                     {
-                        if (wk != null)
-                        {
-                            wk.ReportProgress(0, f.FullName + " converted");
-                        }
-                        string tmp = f.FullName;
-                        f.Delete();
-                        FileInfo fOutput = new(output);
-                        fOutput.MoveTo(tmp);
+                        ConvertDirectory(d, wk);
                     }
                 }
+            }
+        }
 
-                foreach (var d in dirs)
+        private void ConvertFile(FileInfo f, BackgroundWorker wk = null)
+        {
+            if (f.Extension.ToLower() != ".mp4" && f.Extension.ToLower() != ".mkv") { return; ; }
+
+            string input = f.FullName;
+            string output = f.FullName.Replace(f.Extension, string.Empty) + "_h265" + f.Extension;
+
+            if (H264Converter.ToH265(input, output, false))
+            {
+                if (wk != null)
                 {
-                    ConvertDirectory(d, wk);
+                    wk.ReportProgress(0, f.FullName + " converted");
                 }
+                string tmp = f.FullName;
+                f.Delete();
+                FileInfo fOutput = new(output);
+                fOutput.MoveTo(tmp);
             }
         }
 
         private void Log(string message)
         {
             tbLogs.Text += "[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine;
+        }
+
+        private void btnConvertSoloFolder_Click(object sender, RoutedEventArgs e)
+        {
+            string inputFolder;
+
+            FolderBrowserDialog openFolderDialog = new();
+            openFolderDialog.ShowDialog();
+
+            inputFolder = openFolderDialog.SelectedPath;
+
+            if (Directory.Exists(inputFolder))
+            {
+                DirectoryInfo dir = new(inputFolder);
+
+                ConvertFolderInBackground(dir, false);
+            }
+        }
+
+        private void btnConvertMultiFolders_Click(object sender, RoutedEventArgs e)
+        {
+            string inputFolder;
+
+            FolderBrowserDialog openFolderDialog = new();
+            openFolderDialog.ShowDialog();
+
+            inputFolder = openFolderDialog.SelectedPath;
+
+            if (Directory.Exists(inputFolder))
+            {
+                DirectoryInfo dir = new(inputFolder);
+
+                ConvertFolderInBackground(dir);
+            }
+        }
+
+        private void btnConvertSoloFile_Click(object sender, RoutedEventArgs e)
+        {
+            string inputFile;
+
+            System.Windows.Forms.OpenFileDialog openFileDialog = new();
+            openFileDialog.ShowDialog();
+
+            inputFile = openFileDialog.FileName;
+
+            if (File.Exists(inputFile))
+            {
+                FileInfo f = new(inputFile);
+
+                ConvertFileInBackground(f);
+            }
         }
     }
 }

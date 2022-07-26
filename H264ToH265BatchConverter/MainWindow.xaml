@@ -7,7 +7,13 @@
         mc:Ignorable="d"
         Title="H264ToH265Converter" Height="720" Width="1280">
     <Grid>
-        <Button x:Name="btnConvertMulti" Click="btnConvertMulti_Click" Width="100" Height="50" Margin="10,10,0,0" Content="Convert Multi" VerticalAlignment="Top" HorizontalAlignment="Left"/>
-        <TextBox x:Name="tbLogs" Margin="10,65,10,10" VerticalScrollBarVisibility="Auto"/>
+        <TextBlock Text="Folder" Margin="10,10,0,0" TextAlignment="Center" FontSize="24" Height="42" VerticalAlignment="Top" HorizontalAlignment="Left" Width="205"/>
+        <Button x:Name="btnConvertSoloFolder" Click="btnConvertSoloFolder_Click" Width="100" Height="50" Margin="10,57,0,0" Content="Convert One" VerticalAlignment="Top" HorizontalAlignment="Left" ToolTip="Convert all video files contained in a folder. Don't search within sub directories."/>
+        <Button x:Name="btnConvertMultiFolders" Click="btnConvertMultiFolders_Click" Width="100" Height="50" Margin="115,57,0,0" Content="Convert Multi" VerticalAlignment="Top" HorizontalAlignment="Left" ToolTip="Convert all video files contained in a folder and within its sub directories."/>
+        
+        <TextBlock Text="File" Margin="287,10,0,0" TextAlignment="Center" FontSize="24" HorizontalAlignment="Left" Width="100" Height="42" VerticalAlignment="Top"/>
+        <Button x:Name="btnConvertSoloFile" Click="btnConvertSoloFile_Click" Width="100" Height="50" Margin="287,57,0,0" Content="Convert One" VerticalAlignment="Top" HorizontalAlignment="Left" ToolTip="Convert only a video file."/>
+        
+        <TextBox x:Name="tbLogs" Margin="10,112,10,10" VerticalScrollBarVisibility="Auto"/>
     </Grid>
 </Window>
