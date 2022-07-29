@@ -16,6 +16,8 @@ namespace H264ToH265BatchConverter
     {
         double TotalMinutes = 0;
 
+        bool Recursive { get; set; } = true;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -138,6 +140,10 @@ namespace H264ToH265BatchConverter
             tbLogs.Text += "[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine;
         }
 
+
+
+
+
         private void btnConvertSoloFolder_Click(object sender, RoutedEventArgs e)
         {
             string inputFolder;
@@ -188,5 +194,53 @@ namespace H264ToH265BatchConverter
                 ConvertFileInBackground(f);
             }
         }
+
+        private void btnConvertSelectedFolders_Click(object sender, RoutedEventArgs e)
+        {
+            string inputFolder;
+
+            //CommonOpenFileDialog dialog = new CommonOpenFileDialog();
+
+            FolderBrowserDialog openFolderDialog = new();
+            openFolderDialog.ShowDialog();
+
+            inputFolder = openFolderDialog.SelectedPath;
+
+            if (Directory.Exists(inputFolder))
+            {
+                DirectoryInfo dir = new(inputFolder);
+
+                ConvertFolderInBackground(dir);
+            }
+        }
+
+        private void btnConvertSelectedFiles_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new();
+            openFileDialog.Multiselect = true;
+            openFileDialog.ShowDialog();
+
+            foreach (var inputFile in openFileDialog.FileNames)
+            {
+                if (File.Exists(inputFile))
+                {
+                    FileInfo f = new(inputFile);
+
+                    ConvertFileInBackground(f);
+                }
+            }
+        }
+
+        private void chkbRecursive_Checked(object sender, RoutedEventArgs e)
+        {
+            Recursive = true;
+        }
+
+        private void chkbRecursive_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Recursive = false;
+        }
+
+
     }
 }
