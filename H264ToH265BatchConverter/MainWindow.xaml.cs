@@ -1,5 +1,4 @@
 ﻿using H264ToH265BatchConverter.Logic;
-using Microsoft.Win32;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -18,13 +17,19 @@ namespace H264ToH265BatchConverter
 
         bool Recursive { get; set; } = true;
 
+        private H264Converter converter;
+
         public MainWindow()
         {
             InitializeComponent();
-            H264Converter.Logger += (log) =>
-            {
-                tbLogs.Dispatcher.Invoke(() => { tbLogs.Text += log + Environment.NewLine;  });
-            };
+            converter = new();
+            //converter.Logger += DisplayLog;
+            converter.OnProgressChanged += Converter_OnProgressChanged;
+        }
+
+        private void Converter_OnProgressChanged(double percentage)
+        {
+            Log("Pending ... " + percentage + "%");
         }
 
         private void ConvertFolderInBackground(DirectoryInfo dir, bool recursive = true)
@@ -88,8 +93,6 @@ namespace H264ToH265BatchConverter
                 Log("Process done. Total time in minutes : " + TotalMinutes);
             };
 
-            Log("Processing started");
-
             wk.RunWorkerAsync();
         }
 
@@ -122,27 +125,30 @@ namespace H264ToH265BatchConverter
             string input = f.FullName;
             string output = f.FullName.Replace(f.Extension, string.Empty) + "_h265" + f.Extension;
 
-            if (H264Converter.ToH265(input, output, false))
+            Log("Processing started : " + input);
+
+            if (converter.ToH265(input, output, true))
             {
                 if (wk != null)
                 {
                     wk.ReportProgress(0, f.FullName + " converted");
                 }
-                string tmp = f.FullName;
-                f.Delete();
-                FileInfo fOutput = new(output);
-                fOutput.MoveTo(tmp);
+                RemoveInputAndRenameOutput(f, output);
             }
+        }
+
+        private void RemoveInputAndRenameOutput(FileInfo input, string outputPath)
+        {
+            string tmp = input.FullName;
+            input.Delete();
+            FileInfo fOutput = new(outputPath);
+            fOutput.MoveTo(tmp);
         }
 
         private void Log(string message)
         {
-            tbLogs.Text += "[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine;
+            tbLogs.Dispatcher?.Invoke(() => tbLogs.Text += "[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine);
         }
-
-
-
-
 
         private void btnConvertSoloFolder_Click(object sender, RoutedEventArgs e)
         {
@@ -241,6 +247,9 @@ namespace H264ToH265BatchConverter
             Recursive = false;
         }
 
-
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            converter.Stop();
+        }
     }
 }

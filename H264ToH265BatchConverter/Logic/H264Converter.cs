@@ -1,15 +1,24 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
+using System.Linq;
 
 namespace H264ToH265BatchConverter.Logic
 {
-    public static class H264Converter
+    public class H264Converter
     {
-        public static Action<string> Logger { get; set; }
+        public double Percentage { get; private set; }
 
-        public static void ToH265Async(string input, string output)
+        //public Action<string> Logger { get; set; }
+
+        public delegate void ProgressChanged(double percentage);
+
+        public event ProgressChanged OnProgressChanged;
+
+        private ProcessObject MpegProcess;
+
+        private int TotalFrames = 0;
+
+        public void ToH265Async(string input, string output)
         {
             BackgroundWorker wk = new();
             wk.DoWork += (s ,e)=>
@@ -30,41 +39,73 @@ namespace H264ToH265BatchConverter.Logic
             };
         }
 
-        public static bool ToH265(string input, string output, bool logOn = true)
+        public bool ToH265(string input, string output, bool logOn = true)
         {
-            Process proc = new Process();
-            proc.StartInfo.FileName = @".\ffmpeg\ffmpeg.exe";
-            proc.StartInfo.Arguments = $@"-hwaccel cuda -hwaccel_device 0 -hwaccel_output_format cuda -v verbose -i ""{input}"" -c:v hevc_nvenc -gpu:v 0 -preset llhp -rc:v cbr -c:a copy ""{output}""";
+            TotalFrames = 0;
 
-            //if (logOn) { Logger?.Invoke("Command line : " + proc.StartInfo.Arguments + Environment.NewLine); }
-
-            proc.StartInfo.RedirectStandardError = true;
-            proc.StartInfo.UseShellExecute = false;
-            proc.StartInfo.CreateNoWindow = true;
-
-            if (!proc.Start())
+            // First, we retrieve the total frame count of the input file
+            ProcessObject probeProcess = new(@".\ffmpeg\ffprobe.exe")
             {
-                if (logOn) { Logger?.Invoke("Starting failed"); }
-                return false;
-            }
-            StreamReader reader = proc.StandardError;
-            string line;
-            while ((line = reader.ReadLine()) != null)
+                Arguments = $@"-v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 ""{input}""",
+                RedirectStandardError = false,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            probeProcess.Initialize((output) => { TotalFrames = Convert.ToInt32(output); });
+
+            probeProcess.Start();
+
+            probeProcess.WaitForCompletion();
+
+            // The we start the conversion
+            MpegProcess = new(@".\ffmpeg\ffmpeg.exe")
             {
-                if (logOn) { Logger?.Invoke(line); }
-            }
+                Arguments = $@"-hide_banner -loglevel error -stats -hwaccel cuda -hwaccel_device 0 -hwaccel_output_format cuda -v verbose -i ""{input}"" -c:v hevc_nvenc -gpu:v 0 -preset llhp -rc:v cbr -c:a copy ""{output}""",
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
 
-            int exitCode = proc.ExitCode;
+            MpegProcess.Initialize(ComputeProgress);
 
-            proc.Close();
+            MpegProcess.Start();
 
-            if (exitCode == 0)
+            MpegProcess.WaitForCompletion();
+
+            if (MpegProcess.ExitCode == 0)
             {
                 return true;
             }
             else
             {
                 return false;
+            }
+        }
+
+        private void ComputeProgress(string log)
+        {
+            if (!log.StartsWith("frame")) { return; }
+
+            log = log.Replace("frame=", string.Empty);
+            var res = log.Split(" ");
+
+            try
+            {
+                double currentFrame = Convert.ToInt32(res.FirstOrDefault(o=>!string.IsNullOrWhiteSpace(o)));
+                Percentage = Math.Round(currentFrame * 100 / TotalFrames, 1);
+            }
+            catch { }
+
+            OnProgressChanged?.Invoke(Percentage);
+        }
+
+        public void Stop()
+        {
+            if(MpegProcess != null)
+            {
+                MpegProcess.Stop();
             }
         }
 
