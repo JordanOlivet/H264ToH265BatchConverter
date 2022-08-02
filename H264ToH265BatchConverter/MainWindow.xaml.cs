@@ -1,8 +1,14 @@
-﻿using H264ToH265BatchConverter.Logic;
+﻿using H264ToH265BatchConverter.Controls;
+using H264ToH265BatchConverter.Logic;
+using H264ToH265BatchConverter.Model;
+using H264ToH265BatchConverter.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 
@@ -13,194 +19,86 @@ namespace H264ToH265BatchConverter
     /// </summary>
     public partial class MainWindow : Window
     {
-        double TotalMinutes = 0;
+        public static readonly List<string> CONST_FileExtensionsSupported = new List<string>{ ".mp4", ".mkv" };
 
-        bool Recursive { get; set; } = true;
+        public List<FileConversion> CurrentFiles { get; set; }
 
-        private H264Converter converter;
+        public bool Recursive = true;
 
         public MainWindow()
         {
             InitializeComponent();
-            converter = new();
-            //converter.Logger += DisplayLog;
-            converter.OnProgressChanged += Converter_OnProgressChanged;
-            converter.onMessageDispath += Converter_MessageDispatch;
+            DataContext = this;
+
+            FileConversion.GlobalLogger += (log) => { Log(log); };
+
+            CurrentFiles = new List<FileConversion>();
         }
 
-        private void Converter_OnProgressChanged(double percentage)
-        {
-            Log("Pending ... " + percentage + "%");
-        }
-
-        private void Converter_MessageDispatch(String message)
-        {
-            Log(message);
-        }
-
-        private void ConvertFolderInBackground(DirectoryInfo dir, bool recursive = true)
-        {
-            BackgroundWorker wk = new()
-            {
-                WorkerReportsProgress = true
-            };
-
-            wk.DoWork += (s, e) =>
-            {
-                Stopwatch watch = new();
-                watch.Start();
-
-                ConvertDirectory(dir, wk, recursive);
-
-                watch.Stop();
-                TotalMinutes = Math.Round(watch.Elapsed.TotalMinutes, 2);
-            };
-
-            wk.ProgressChanged += (p, o) => { tbLogs.Dispatcher.Invoke(() => { Log((string)o.UserState); }); };
-
-            wk.RunWorkerCompleted += (s, e) => { Log("Process done. Total time in minutes : " + TotalMinutes); };
-
-            Log("Processing started");
-
-            wk.RunWorkerAsync();
-        }
-
-        private void ConvertFileInBackground(FileInfo file)
-        {
-            BackgroundWorker wk = new()
-            {
-                WorkerReportsProgress = true
-            };
-
-            wk.DoWork += (s, e) =>
-            {
-                Stopwatch watch = new();
-                watch.Start();
-
-                ConvertFile(file, wk);
-
-                watch.Stop();
-                TotalMinutes = Math.Round(watch.Elapsed.TotalMinutes, 2);
-            };
-
-            wk.ProgressChanged += (p, o) => { tbLogs.Dispatcher.Invoke(() => { Log((string)o.UserState); }); };
-
-            wk.RunWorkerCompleted += (s, e) => { Log("Process done. Total time in minutes : " + TotalMinutes); };
-
-            wk.RunWorkerAsync();
-        }
-
-        private void ConvertDirectory(DirectoryInfo dir, BackgroundWorker wk = null, bool recursive = true)
+        #region Conversion Management
+        private async void ConvertDirectory(DirectoryInfo dir, bool recursive = true)
         {
             if (dir != null)
             {
-                var dirs = dir.EnumerateDirectories();
-                var files = dir.EnumerateFiles();
+                UpdateFileComponents(dir, recursive);
 
-                foreach (var f in files)
+                foreach (var file in CurrentFiles)
                 {
-                    ConvertFile(f, wk);
-                }
-
-                if (recursive)
-                {
-                    foreach (var d in dirs)
-                    {
-                        ConvertDirectory(d, wk);
-                    }
+                    await ConvertFile(file);
                 }
             }
         }
 
-        private void ConvertFile(FileInfo f, BackgroundWorker wk = null)
+        private async Task ConvertFile(FileConversion file)
         {
-            if (f.Extension.ToLower() != ".mp4" && f.Extension.ToLower() != ".mkv")
-            {
-                return;
-                ;
-            }
+            await ConvertAsync(file);
 
-            string input = f.FullName;
-            string output = f.FullName.Replace(f.Extension, string.Empty) + "_h265" + f.Extension;
+            LogConversionResult(file);
 
-            Log("Processing started : " + input);
-
-            if (converter.ToH265(input, output, true))
-            {
-                if (wk != null)
-                {
-                    wk.ReportProgress(0, f.FullName + " converted");
-                }
-
-                RemoveInputAndRenameOutput(f, output);
-            }
+            UpdateTotalProgress();
         }
 
-        private void RemoveInputAndRenameOutput(FileInfo input, string outputPath)
+        private async Task ConvertAsync(FileConversion file)
         {
-            string tmp = input.FullName;
-            input.Delete();
-            FileInfo fOutput = new(outputPath);
-            fOutput.MoveTo(tmp);
+            var task = file.Convert();
+
+            await task.WaitAsync(new CancellationToken());
+        }
+        #endregion
+
+        #region Logs
+        private void LogConversionResult(FileConversion file)
+        {
+            string log = "";
+
+            if (file.ConversionSuccessed)
+            {
+                log = file.File.File.FullName + " converted !";
+            }
+            else
+            {
+                if (file.ConversionStatus == ConversionStatus.Failed)
+                {
+                    log = file.File.File.FullName + " conversion failed !";
+                }
+                else if (file.ConversionStatus == ConversionStatus.AlreadyConverted)
+                {
+                    log = file.File.File.FullName + " have been already converted in x265 !";
+                }
+            }
+
+            Log(log);
         }
 
         private void Log(string message)
         {
+            if (string.IsNullOrWhiteSpace(message)) { return; }
             tbLogs.Dispatcher?.Invoke(() => tbLogs.AppendText("[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine));
             tbLogs.Dispatcher?.Invoke(() => tbLogs.ScrollToEnd());
         }
+        #endregion
 
-        private void btnConvertSoloFolder_Click(object sender, RoutedEventArgs e)
-        {
-            string inputFolder;
-
-            FolderBrowserDialog openFolderDialog = new();
-            openFolderDialog.ShowDialog();
-
-            inputFolder = openFolderDialog.SelectedPath;
-
-            if (Directory.Exists(inputFolder))
-            {
-                DirectoryInfo dir = new(inputFolder);
-
-                ConvertFolderInBackground(dir, false);
-            }
-        }
-
-        private void btnConvertMultiFolders_Click(object sender, RoutedEventArgs e)
-        {
-            string inputFolder;
-
-            FolderBrowserDialog openFolderDialog = new();
-            openFolderDialog.ShowDialog();
-
-            inputFolder = openFolderDialog.SelectedPath;
-
-            if (Directory.Exists(inputFolder))
-            {
-                DirectoryInfo dir = new(inputFolder);
-
-                ConvertFolderInBackground(dir);
-            }
-        }
-
-        private void btnConvertSoloFile_Click(object sender, RoutedEventArgs e)
-        {
-            string inputFile;
-
-            System.Windows.Forms.OpenFileDialog openFileDialog = new();
-            openFileDialog.ShowDialog();
-
-            inputFile = openFileDialog.FileName;
-
-            if (File.Exists(inputFile))
-            {
-                FileInfo f = new(inputFile);
-
-                ConvertFileInBackground(f);
-            }
-        }
-
+        #region UI Events
         private void btnConvertSelectedFolders_Click(object sender, RoutedEventArgs e)
         {
             string inputFolder;
@@ -214,17 +112,28 @@ namespace H264ToH265BatchConverter
 
             if (Directory.Exists(inputFolder))
             {
+                progressBarTotal.Value = 0;
+
                 DirectoryInfo dir = new(inputFolder);
 
-                ConvertFolderInBackground(dir);
+                ConvertDirectory(dir, Recursive);
             }
         }
 
-        private void btnConvertSelectedFiles_Click(object sender, RoutedEventArgs e)
+        private async void btnConvertSelectedFiles_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.OpenFileDialog openFileDialog = new();
-            openFileDialog.Multiselect = true;
+            OpenFileDialog openFileDialog = new()
+            {
+                Multiselect = true,
+                Filter = "Video Files|*.mp4;*.mkv;"
+            };
             openFileDialog.ShowDialog();
+
+            if (openFileDialog.FileNames.Length == 0) { return; }
+
+            wrpPanelFiles.Children.Clear();
+            CurrentFiles.Clear();
+            progressBarTotal.Value = 0;
 
             foreach (var inputFile in openFileDialog.FileNames)
             {
@@ -232,8 +141,13 @@ namespace H264ToH265BatchConverter
                 {
                     FileInfo f = new(inputFile);
 
-                    ConvertFileInBackground(f);
+                    AddFileComponent(f);
                 }
+            }
+
+            foreach (var file in CurrentFiles)
+            {
+                await ConvertFile(file);
             }
         }
 
@@ -249,7 +163,82 @@ namespace H264ToH265BatchConverter
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
-            converter.Stop();
+            // On s'assure que tous les converter sont bien arrêté
+            foreach (var f in CurrentFiles)
+            {
+                f.StopConversion();
+            }
         }
+
+        private void btnTest_Click(object sender, RoutedEventArgs e)
+        {
+            string inputFolder;
+
+            FolderBrowserDialog openFolderDialog = new();
+            openFolderDialog.ShowDialog();
+
+            inputFolder = openFolderDialog.SelectedPath;
+
+            if (Directory.Exists(inputFolder))
+            {
+                DirectoryInfo dir = new(inputFolder);
+
+                ConvertDirectory(dir, false);
+            }
+        }
+        #endregion
+
+        #region UI Update
+        private void UpdateFileComponents(DirectoryInfo dir, bool recursive = true)
+        {
+            wrpPanelFiles.Children.Clear();
+            CurrentFiles.Clear();
+
+            AddFilesComponentFromFolder(dir, recursive);
+        }
+
+        private void AddFilesComponentFromFolder(DirectoryInfo dir, bool recursive = true)
+        {
+            var files = dir.EnumerateFiles();
+
+            foreach (var f in files)
+            {
+                if (!CONST_FileExtensionsSupported.Contains(f.Extension.ToLower())) { continue; }
+                AddFileComponent(f);
+            }
+
+            if (recursive)
+            {
+                var dirs = dir.EnumerateDirectories();
+
+                foreach (var d in dirs)
+                {
+                    AddFilesComponentFromFolder(d, recursive);
+                }
+            }
+        }
+
+        private void AddFileComponent(FileInfo file)
+        {
+            var viewModel = new FileConversionViewModel(new Lakio.Framework.Core.IO.FileObject(file.FullName));
+
+            wrpPanelFiles.Children.Add(new FileConversionComponent(viewModel));
+            CurrentFiles.Add(new FileConversion(viewModel));
+        }
+
+        private void UpdateTotalProgress()
+        {
+            var total = CurrentFiles.Count;
+
+            var done = CurrentFiles.Where(o => o.ConversionStatus != ConversionStatus.Pending && o.ConversionStatus != ConversionStatus.NotStarted).Count();
+
+            if(total == 0) { return; }
+
+            var currentPercentage = done * 100 / total;
+
+            progressBarTotal.Dispatcher?.Invoke(() => { progressBarTotal.Value = currentPercentage; });
+        }
+
+        #endregion
     }
 }

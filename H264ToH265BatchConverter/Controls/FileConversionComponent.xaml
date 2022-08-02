@@ -1,0 +1,41 @@
+﻿<UserControl x:Class="H264ToH265BatchConverter.Controls.FileConversionComponent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:H264ToH265BatchConverter.Controls"
+             mc:Ignorable="d" Padding="8" Width="400" MaxHeight="100">
+    <Border BorderBrush="#89929a" BorderThickness="1" Padding="4" CornerRadius="4">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="38"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="10"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" VerticalAlignment="Stretch" Height="Auto">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock x:Name="tbName" Grid.Row="0" Text="{Binding FileName}" TextWrapping="Wrap"/>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <TextBlock x:Name="tbDurationTitle" Text="Time spent : "/>
+                    <TextBlock x:Name="tbDuration" Text="{Binding File.Duration}"/>
+                </StackPanel>
+                    <!--<TextBlock x:Name="tbName" Grid.Row="0" Text="Test" TextWrapping="WrapWithOverflow" VerticalAlignment="Center"/>
+                <TextBlock x:Name="tbDuration" Grid.Row="1" Text="Test" TextWrapping="WrapWithOverflow" VerticalAlignment="Center"/>-->
+            
+            </Grid>
+
+            <Image x:Name="imageStatus" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Width="30" Height="30" Source="{Binding File.ImageSource}" VerticalAlignment="Center" Margin="4,0"/>
+
+            <ProgressBar Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Height="2" Margin="4" BorderThickness="0" Maximum="100" Minimum="0" Value="{Binding File.Progress}"/>
+
+        </Grid>
+    </Border>
+</UserControl>

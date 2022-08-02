@@ -1,51 +1,35 @@
 ﻿using Lakio.Framework.Core.System;
 using System;
-using System.ComponentModel;
 using System.Linq;
-using Lakio.Framework.Core.System;
 
 namespace H264ToH265BatchConverter.Logic
 {
+    public enum ConversionStatus
+    {
+        Success = 0,
+        Failed = 1,
+        AlreadyConverted = 2,
+        Pending = 3,
+        NotStarted = 4,
+    }
+
     public class H264Converter
     {
         public double Percentage { get; private set; }
-
-        //public Action<string> Logger { get; set; }
 
         public delegate void ProgressChanged(double percentage);
 
         public event ProgressChanged OnProgressChanged;
         
-        public delegate void MessageDispatcher(String message);
+        //public delegate void MessageDispatcher(string message);
 
-        public event MessageDispatcher onMessageDispath;
+        //public event MessageDispatcher OnMessageDispath;
 
         private ProcessObject MpegProcess;
 
         private int TotalFrames = 0;
         
-        //public void ToH265Async(string input, string output)
-        //{
-        //    BackgroundWorker wk = new();
-        //    wk.DoWork += (s ,e)=>
-        //    {
-        //        if (ToH265(input, output, false))
-        //        {
-
-        //        }
-        //        else
-        //        {
-
-        //        }
-        //    };
-
-        //    wk.RunWorkerCompleted += (s, e) => 
-        //    {
-
-        //    };
-        //}
-
-        public bool ToH265(string input, string output, bool logOn = true)
+        public ConversionStatus ToH265(string input, string output)
         {
             TotalFrames = 0;
 
@@ -65,17 +49,14 @@ namespace H264ToH265BatchConverter.Logic
 
             probeProcess.WaitForCompletion();
 
-
-            var fileEncoding = detectFileEncoding(input);
-
+            var fileEncoding = DetectFileEncoding(input);
 
             if (!fileEncoding.Equals("hevc"))
             {
                 // Then we start the conversion
                 MpegProcess = new(@".\ffmpeg\ffmpeg.exe")
                 {
-                    Arguments =
-                        $@"-hide_banner -loglevel error -stats -hwaccel cuda -hwaccel_device 0 -hwaccel_output_format cuda -v verbose -i ""{input}"" -c:v hevc_nvenc -gpu:v 0 -preset llhp -rc:v cbr -c:a copy ""{output}""",
+                    Arguments = $@"-hide_banner -loglevel error -stats -hwaccel cuda -hwaccel_device 0 -hwaccel_output_format cuda -v verbose -i ""{input}"" -c:v hevc_nvenc -gpu:v 0 -preset llhp -rc:v cbr -c:a copy ""{output}""",
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
@@ -87,28 +68,28 @@ namespace H264ToH265BatchConverter.Logic
 
                 MpegProcess.WaitForCompletion();
 
-                return MpegProcess.ExitCode == 0;
+                return MpegProcess.ExitCode == 0 ? ConversionStatus.Success : ConversionStatus.Failed;
             }
             else
             {
-                onMessageDispath?.Invoke("File already encoded in x265");
-                return false;
+                //OnMessageDispath?.Invoke("File already encoded in x265");
+                return ConversionStatus.AlreadyConverted;
             }
         }
 
-        private static string detectFileEncoding(string input)
+        private static string DetectFileEncoding(string input)
         {
             // Secondly we detect the file encoding
             ProcessObject detectEncodingProcess = new(@".\ffmpeg\ffprobe.exe")
             {
-                Arguments =
-                    $@" -v error -select_streams v:0 -show_entries stream=codec_name -of default=nokey=1:noprint_wrappers=1 -i ""{input}""",
+                Arguments = $@" -v error -select_streams v:0 -show_entries stream=codec_name -of default=nokey=1:noprint_wrappers=1 -i ""{input}""",
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            String fileEncoding = "";
+
+            string fileEncoding = "";
             detectEncodingProcess.Initialize((encoding) => { fileEncoding = encoding; });
 
             detectEncodingProcess.Start();
@@ -132,9 +113,7 @@ namespace H264ToH265BatchConverter.Logic
                 double currentFrame = Convert.ToInt32(res.FirstOrDefault(o => !string.IsNullOrWhiteSpace(o)));
                 Percentage = Math.Round(currentFrame * 100 / TotalFrames, 1);
             }
-            catch
-            {
-            }
+            catch { }
 
             OnProgressChanged?.Invoke(Percentage);
         }
@@ -146,6 +125,5 @@ namespace H264ToH265BatchConverter.Logic
                 MpegProcess.Stop();
             }
         }
-
     }
 }

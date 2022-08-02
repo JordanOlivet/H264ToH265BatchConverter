@@ -9,6 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\cross.png" />
+    <None Remove="Resources\cross.svg" />
+    <None Remove="Resources\default.png" />
+    <None Remove="Resources\ok.png" />
+    <None Remove="Resources\ok.svg" />
+    <None Remove="Resources\pending.png" />
+    <None Remove="Resources\pending.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <COMReference Include="{215d64d2-031c-33c7-96e3-61794cd1ee61}">
       <WrapperTool>tlbimp</WrapperTool>
       <VersionMinor>4</VersionMinor>
@@ -20,6 +30,28 @@
   <ItemGroup>
     <ProjectReference Include="..\Lakio.Framework.Core\Lakio.Framework.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\cross.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\default.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\ok.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\pending.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\convertionAlreadyDone.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\wait.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
   <ItemGroup>
     <None Update="ffmpeg\avcodec-59.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -54,6 +86,21 @@
     <None Update="ffmpeg\swscale-6.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Resources\convertionAlreadyDone.png" />
+    <Content Remove="Resources\cross.png" />
+    <Content Remove="Resources\default.png" />
+    <Content Remove="Resources\ok.png" />
+    <Content Remove="Resources\pending.png" />
+    <Content Remove="Resources\wait.gif" />
   </ItemGroup>
 
 </Project>

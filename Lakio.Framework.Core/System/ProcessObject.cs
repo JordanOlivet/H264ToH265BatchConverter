@@ -108,9 +108,20 @@ namespace Lakio.Framework.Core.System
         {
             if(internalProcess != null)
             {
-                internalProcess.Kill();
-                internalProcess.Dispose();
-                internalProcess = null;
+                try
+                {
+                    // On teste si le process est toujours vivant et rattaché à notre objet
+                    var _ = internalProcess.Handle; // <== Si cette ligne plante, c'est que le process n'existe plus
+
+                    if (!internalProcess.HasExited)
+                    {
+                        internalProcess.Kill();
+                        internalProcess.WaitForExit();
+                        internalProcess.Dispose();
+                        internalProcess = null;
+                    }
+                }
+                catch { }
             }
 
             if(internalWorker != null && internalWorker.IsBusy)

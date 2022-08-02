@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 using PathIO = System.IO.Path;
 
 namespace Lakio.Framework.Core.IO
@@ -19,7 +14,7 @@ namespace Lakio.Framework.Core.IO
         /// </summary>
         public object Status { get; set; }
 
-        public string Path { get; set; }
+        public string FullName { get; set; }
 
         public FileInfo Infos { get; set; }
 
@@ -27,7 +22,7 @@ namespace Lakio.Framework.Core.IO
         {
             if (string.IsNullOrWhiteSpace(path)) { throw new ArgumentNullException("The path argument is not allowed to be empty."); }
 
-            Path = path;
+            FullName = path;
             Infos = new FileInfo(path);
         }
 
@@ -37,15 +32,29 @@ namespace Lakio.Framework.Core.IO
 
             try 
             {
-                Infos.MoveTo(newPath, overwrite);
+                MoveTo(newPath, overwrite);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
 
                 return false;
             }
 
             return true;
+        }
+
+        public void Delete()
+        {
+            try
+            {
+                Infos.Delete();
+            }
+            catch { }
+        }
+
+        public void MoveTo(string destination, bool overwrite = false)
+        {
+            Infos.MoveTo(destination, overwrite);
         }
     }
 }
