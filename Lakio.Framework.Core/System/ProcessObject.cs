@@ -4,9 +4,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using System.Windows.Forms;
 
-namespace H264ToH265BatchConverter.Logic
+namespace Lakio.Framework.Core.System
 {
     public class ProcessObject
     {
@@ -110,7 +109,6 @@ namespace H264ToH265BatchConverter.Logic
             if(internalProcess != null)
             {
                 internalProcess.Kill();
-                //internalProcess.WaitForExit();
                 internalProcess.Dispose();
                 internalProcess = null;
             }
@@ -130,7 +128,6 @@ namespace H264ToH265BatchConverter.Logic
                 while(internalWorker != null && internalWorker.IsBusy)
                 {
                     Thread.Sleep(500);
-                    Application.DoEvents();
                 }
             }
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Lakio.Framework.Core.System;
+using System;
 using System.ComponentModel;
 using System.Linq;
 
@@ -18,26 +19,26 @@ namespace H264ToH265BatchConverter.Logic
 
         private int TotalFrames = 0;
 
-        public void ToH265Async(string input, string output)
-        {
-            BackgroundWorker wk = new();
-            wk.DoWork += (s ,e)=>
-            {
-                if (ToH265(input, output, false))
-                {
+        //public void ToH265Async(string input, string output)
+        //{
+        //    BackgroundWorker wk = new();
+        //    wk.DoWork += (s ,e)=>
+        //    {
+        //        if (ToH265(input, output, false))
+        //        {
 
-                }
-                else
-                {
+        //        }
+        //        else
+        //        {
 
-                }
-            };
+        //        }
+        //    };
 
-            wk.RunWorkerCompleted += (s, e) => 
-            {
+        //    wk.RunWorkerCompleted += (s, e) => 
+        //    {
 
-            };
-        }
+        //    };
+        //}
 
         public bool ToH265(string input, string output, bool logOn = true)
         {

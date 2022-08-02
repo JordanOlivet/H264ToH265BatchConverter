@@ -18,6 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Lakio.Framework.Core\Lakio.Framework.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="ffmpeg\avcodec-59.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
