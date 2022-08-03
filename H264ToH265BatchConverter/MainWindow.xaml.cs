@@ -25,11 +25,17 @@ namespace H264ToH265BatchConverter
             converter = new();
             //converter.Logger += DisplayLog;
             converter.OnProgressChanged += Converter_OnProgressChanged;
+            converter.onMessageDispath += Converter_MessageDispatch;
         }
 
         private void Converter_OnProgressChanged(double percentage)
         {
             Log("Pending ... " + percentage + "%");
+        }
+
+        private void Converter_MessageDispatch(String message)
+        {
+            Log(message);
         }
 
         private void ConvertFolderInBackground(DirectoryInfo dir, bool recursive = true)
@@ -47,18 +53,12 @@ namespace H264ToH265BatchConverter
                 ConvertDirectory(dir, wk, recursive);
 
                 watch.Stop();
-                TotalMinutes = Math.Round(watch.Elapsed.TotalMinutes,2);
+                TotalMinutes = Math.Round(watch.Elapsed.TotalMinutes, 2);
             };
 
-            wk.ProgressChanged += (p, o) =>
-            {
-                tbLogs.Dispatcher.Invoke(() => { Log((string)o.UserState); });
-            };
+            wk.ProgressChanged += (p, o) => { tbLogs.Dispatcher.Invoke(() => { Log((string)o.UserState); }); };
 
-            wk.RunWorkerCompleted += (s, e) =>
-            {
-                Log("Process done. Total time in minutes : " + TotalMinutes);
-            };
+            wk.RunWorkerCompleted += (s, e) => { Log("Process done. Total time in minutes : " + TotalMinutes); };
 
             Log("Processing started");
 
@@ -83,15 +83,9 @@ namespace H264ToH265BatchConverter
                 TotalMinutes = Math.Round(watch.Elapsed.TotalMinutes, 2);
             };
 
-            wk.ProgressChanged += (p, o) =>
-            {
-                tbLogs.Dispatcher.Invoke(() => { Log((string)o.UserState); });
-            };
+            wk.ProgressChanged += (p, o) => { tbLogs.Dispatcher.Invoke(() => { Log((string)o.UserState); }); };
 
-            wk.RunWorkerCompleted += (s, e) =>
-            {
-                Log("Process done. Total time in minutes : " + TotalMinutes);
-            };
+            wk.RunWorkerCompleted += (s, e) => { Log("Process done. Total time in minutes : " + TotalMinutes); };
 
             wk.RunWorkerAsync();
         }
@@ -120,7 +114,11 @@ namespace H264ToH265BatchConverter
 
         private void ConvertFile(FileInfo f, BackgroundWorker wk = null)
         {
-            if (f.Extension.ToLower() != ".mp4" && f.Extension.ToLower() != ".mkv") { return; ; }
+            if (f.Extension.ToLower() != ".mp4" && f.Extension.ToLower() != ".mkv")
+            {
+                return;
+                ;
+            }
 
             string input = f.FullName;
             string output = f.FullName.Replace(f.Extension, string.Empty) + "_h265" + f.Extension;
@@ -133,6 +131,7 @@ namespace H264ToH265BatchConverter
                 {
                     wk.ReportProgress(0, f.FullName + " converted");
                 }
+
                 RemoveInputAndRenameOutput(f, output);
             }
         }
@@ -147,7 +146,8 @@ namespace H264ToH265BatchConverter
 
         private void Log(string message)
         {
-            tbLogs.Dispatcher?.Invoke(() => tbLogs.Text += "[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine);
+            tbLogs.Dispatcher?.Invoke(() =>
+                tbLogs.Text += "[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine);
         }
 
         private void btnConvertSoloFolder_Click(object sender, RoutedEventArgs e)
