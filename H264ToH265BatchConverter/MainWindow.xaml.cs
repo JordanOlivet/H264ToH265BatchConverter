@@ -146,8 +146,8 @@ namespace H264ToH265BatchConverter
 
         private void Log(string message)
         {
-            tbLogs.Dispatcher?.Invoke(() =>
-                tbLogs.Text += "[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine);
+            tbLogs.Dispatcher?.Invoke(() => tbLogs.AppendText("[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine));
+            tbLogs.Dispatcher?.Invoke(() => tbLogs.ScrollToEnd());
         }
 
         private void btnConvertSoloFolder_Click(object sender, RoutedEventArgs e)
