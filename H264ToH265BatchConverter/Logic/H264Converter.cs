@@ -87,19 +87,12 @@ namespace H264ToH265BatchConverter.Logic
 
                 MpegProcess.WaitForCompletion();
 
-                if (MpegProcess.ExitCode == 0)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return MpegProcess.ExitCode == 0;
             }
             else
             {
-                onMessageDispath?.Invoke("File already in x265");
-                return true;
+                onMessageDispath?.Invoke("File already encoded in x265");
+                return false;
             }
         }
 
