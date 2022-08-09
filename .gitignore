@@ -1,3 +1,9 @@
 ﻿.vs
 H264ToH265BatchConverter/obj
 H264ToH265BatchConverter/bin
+Lakio.Framework.Core/*
+H264ToH265BatchConverter/ffmpeg/ffmpeg_doc.txt
+Lakio.Framework.Core.Tests
+.idea
+*bin
+*obj

@@ -4,9 +4,46 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:H264ToH265BatchConverter"
+        xmlns:controls="clr-namespace:H264ToH265BatchConverter.Controls"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Closing="Window_Closing"
+        Title="Conversion tool" Height="720" Width="1280">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="75"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="24"/>
+        </Grid.RowDefinitions>
 
+        <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="#89929a" Margin="8,0">
+            <TextBlock Text="Convert your video files to x265 encoding and gain massive disk space !" VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Open Sans" FontSize="18" FontWeight="DemiBold"/>
+        </Border>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8,0,8,0">
+            
+            <Button x:Name="btnConvertSelectedFolders" Click="btnConvertSelectedFolders_Click" Height="50" Padding="8" Margin="0,0,8,0" Content="Convert Selected Folder" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip="Convert all video files contained in selected folders"/>
+            <Button x:Name="btnConvertSelectedFiles" Click="btnConvertSelectedFiles_Click" Height="50"  Padding="8" Content="Convert Selected Files" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip="Convert only selected video files."/>
+
+            <Border Margin="8,12,8,12" BorderBrush="Gray" BorderThickness="1" Padding="8">
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox x:Name="chkbRecursive" Content="Recursive searching" IsChecked="true" ToolTip="Defines if the process will search for files within sub directories" VerticalAlignment="Center" VerticalContentAlignment="Center" Checked="chkbRecursive_Checked" Unchecked="chkbRecursive_Unchecked"/>
+                </StackPanel>
+            </Border>
+
+            <!--<Button x:Name="btnTest" Click="btnTest_Click" Height="50"  Padding="8" Content="Test" VerticalAlignment="Center" HorizontalAlignment="Left"/>-->
+
+        </StackPanel>
+
+        <Border x:Name="borderContent" Grid.Row="2" HorizontalAlignment="Stretch">
+            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Height="{Binding ElementName=borderContent, Path=Height}" Width="{Binding ElementName=borderContent, Path=Width}">
+                <WrapPanel x:Name="wrpPanelFiles" Orientation="Horizontal" Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ScrollViewer}}, Path=ActualWidth}"/>
+            </ScrollViewer>
+        </Border>
+
+        <TextBox x:Name="tbLogs" Grid.Row="3" Grid.ColumnSpan="3" Margin="10,10,10,10" VerticalScrollBarVisibility="Auto" IsReadOnly="True" BorderBrush="#89929a"/>
+
+        <ProgressBar x:Name="progressBarTotal" Grid.Row="4" Margin="8" Height="8" BorderThickness="0" Minimum="0" Maximum="100"/>
     </Grid>
 </Window>

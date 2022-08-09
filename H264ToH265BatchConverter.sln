@@ -3,7 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "H264ToH265BatchConverter", "H264ToH265BatchConverter\H264ToH265BatchConverter.csproj", "{C925B17E-DC55-48A4-84F7-06239CB1126B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "H264ToH265BatchConverter", "H264ToH265BatchConverter\H264ToH265BatchConverter.csproj", "{C925B17E-DC55-48A4-84F7-06239CB1126B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lakio.Framework.Core", "Lakio.Framework.Core\Lakio.Framework.Core.csproj", "{E6628CED-8CB8-4F27-ADE3-5A9401F09AE2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lakio.Framework", "Lakio.Framework", "{CF548CF5-BAB1-48A8-8AB1-9597254D667E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lakio.Framework.Tests", "Lakio.Framework.Tests", "{DE6B5B89-D355-467D-BD19-FA728CFA53E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lakio.Framework.Core.Tests", "Lakio.Framework.Core.Tests\Lakio.Framework.Core.Tests.csproj", "{7E0FEA28-1879-4709-A98F-8EAFC7383F26}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +23,21 @@ Global
 		{C925B17E-DC55-48A4-84F7-06239CB1126B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C925B17E-DC55-48A4-84F7-06239CB1126B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C925B17E-DC55-48A4-84F7-06239CB1126B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6628CED-8CB8-4F27-ADE3-5A9401F09AE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6628CED-8CB8-4F27-ADE3-5A9401F09AE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6628CED-8CB8-4F27-ADE3-5A9401F09AE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6628CED-8CB8-4F27-ADE3-5A9401F09AE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E0FEA28-1879-4709-A98F-8EAFC7383F26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E0FEA28-1879-4709-A98F-8EAFC7383F26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E0FEA28-1879-4709-A98F-8EAFC7383F26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E0FEA28-1879-4709-A98F-8EAFC7383F26}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E6628CED-8CB8-4F27-ADE3-5A9401F09AE2} = {CF548CF5-BAB1-48A8-8AB1-9597254D667E}
+		{7E0FEA28-1879-4709-A98F-8EAFC7383F26} = {DE6B5B89-D355-467D-BD19-FA728CFA53E9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {264B4047-7BA2-4F92-B56B-42C4A31D14D4}
