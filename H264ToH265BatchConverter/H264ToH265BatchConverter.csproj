@@ -103,4 +103,8 @@
     <Content Remove="Resources\wait.gif" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="Xcopy /E /I /Y &quot;$(ProjectDir)Resources&quot; &quot;$(ProjectDir)$(OutDir)Resources&quot;" />
+  </Target>
+
 </Project>
