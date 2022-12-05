@@ -56,12 +56,12 @@ namespace H264ToH265BatchConverter.Logic
                 // Then we start the conversion
                 MpegProcess = new(@".\ffmpeg\ffmpeg.exe")
                 {
-                    Arguments = $@"-hide_banner -loglevel error -stats -hwaccel cuda -hwaccel_device 0 -hwaccel_output_format cuda -v verbose -i ""{input}"" -c:v hevc_nvenc -gpu:v 0 -preset llhp -rc:v cbr -c:a copy ""{output}""",
+                    Arguments = $@"-hide_banner -loglevel error -stats -hwaccel cuda -hwaccel_device 0 -hwaccel_output_format cuda -v verbose -i ""{input}"" -map 0:v -map 0:a -map 0:s -c:v hevc_nvenc -c:s copy -c:a aac -gpu 0 -preset llhp -rc:v cbr ""{output}""",
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-
+                
                 MpegProcess.Initialize(ComputeProgress);
 
                 MpegProcess.Start();
