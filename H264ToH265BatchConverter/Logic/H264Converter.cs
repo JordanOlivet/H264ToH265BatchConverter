@@ -20,34 +20,20 @@ namespace H264ToH265BatchConverter.Logic
         public delegate void ProgressChanged(double percentage);
 
         public event ProgressChanged OnProgressChanged;
-        
+
         //public delegate void MessageDispatcher(string message);
 
         //public event MessageDispatcher OnMessageDispath;
 
         private ProcessObject MpegProcess;
 
-        private int TotalFrames = 0;
-        
+        private TimeSpan TotalTime = TimeSpan.Zero;
+
         public ConversionStatus ToH265(string input, string output)
         {
-            TotalFrames = 0;
+            TotalTime = TimeSpan.Zero;
 
-            // First, we retrieve the total frame count of the input file
-            ProcessObject probeProcess = new(@".\ffmpeg\ffprobe.exe")
-            {
-                Arguments = $@"-v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 ""{input}""",
-                RedirectStandardError = false,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            probeProcess.Initialize((output) => { TotalFrames = Convert.ToInt32(output); });
-
-            probeProcess.Start();
-
-            probeProcess.WaitForCompletion();
+            DetectNumberOfFrames(input);
 
             var fileEncoding = DetectFileEncoding(input);
 
@@ -56,12 +42,13 @@ namespace H264ToH265BatchConverter.Logic
                 // Then we start the conversion
                 MpegProcess = new(@".\ffmpeg\ffmpeg.exe")
                 {
-                    Arguments = $@"-hide_banner -loglevel error -stats -hwaccel cuda -hwaccel_device 0 -hwaccel_output_format cuda -v verbose -i ""{input}"" -map 0:v -map 0:a -map 0:s -c:v hevc_nvenc -c:s copy -c:a aac -gpu 0 -preset llhp -rc:v cbr ""{output}""",
+                    Arguments =
+                        $@" -c:v h264_cuvid -i ""{input}"" -hide_banner -loglevel error -stats -v verbose -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 1643k -minrate 1150k -maxrate 2135k -bufsize 3286k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a aac -c:s copy -max_muxing_queue_size 9999 ""{output}""",
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                
+
                 MpegProcess.Initialize(ComputeProgress);
 
                 MpegProcess.Start();
@@ -75,6 +62,38 @@ namespace H264ToH265BatchConverter.Logic
                 //OnMessageDispath?.Invoke("File already encoded in x265");
                 return ConversionStatus.AlreadyConverted;
             }
+
+            return ConversionStatus.Success;
+        }
+
+        private void DetectNumberOfFrames(string input)
+        {
+            ProcessObject probeProcess = new(@".\ffmpeg\ffprobe.exe")
+            {
+                Arguments =
+                    $@"-v error -show_entries format=duration -v quiet -sexagesimal -of csv=p=0 ""{input}""",
+                RedirectStandardError = false,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            probeProcess.Initialize((output) =>
+            {
+                int hours = Convert.ToInt32(output.Split(":")[0]);
+                int minutes = Convert.ToInt32(output.Split(":")[1]);
+                string secondsMilliseconds = output.Split(":")[2];
+                int seconds = Convert.ToInt32(secondsMilliseconds.Split(".")[0]);
+                TotalTime = new TimeSpan(0,
+                    hours,
+                    minutes,
+                    seconds,
+                    0);
+            });
+
+            probeProcess.Start();
+
+            probeProcess.WaitForCompletion();
         }
 
         private static string DetectFileEncoding(string input)
@@ -82,7 +101,8 @@ namespace H264ToH265BatchConverter.Logic
             // Secondly we detect the file encoding
             ProcessObject detectEncodingProcess = new(@".\ffmpeg\ffprobe.exe")
             {
-                Arguments = $@" -v error -select_streams v:0 -show_entries stream=codec_name -of default=nokey=1:noprint_wrappers=1 -i ""{input}""",
+                Arguments =
+                    $@" -v error -select_streams v:0 -show_entries stream=codec_name -of default=nokey=1:noprint_wrappers=1 -i ""{input}""",
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
@@ -105,15 +125,27 @@ namespace H264ToH265BatchConverter.Logic
                 return;
             }
 
-            log = log.Replace("frame=", string.Empty);
-            var res = log.Split(" ");
-
+            // log = log.Replace("time=", ";;;;");
+            // var res = log.Split(";;;;");
+            
+            int pFrom = log.IndexOf("time=") + "time=".Length;
+            int pTo = log.LastIndexOf(" bitrate=");
+            String result = log.Substring(pFrom, pTo - pFrom);
             try
             {
-                double currentFrame = Convert.ToInt32(res.FirstOrDefault(o => !string.IsNullOrWhiteSpace(o)));
-                Percentage = Math.Round(currentFrame * 100 / TotalFrames, 1);
+            
+                string currentTime = result;
+                
+                int hours = Convert.ToInt32(currentTime.Split(":")[0]);
+                int minutes = Convert.ToInt32(currentTime.Split(":")[1]);
+                string secondsMilliseconds = currentTime.Split(":")[2];
+                int seconds = Convert.ToInt32(secondsMilliseconds.Split(".")[0]);
+                TimeSpan timeSpan = new TimeSpan(0, hours, minutes, seconds, 0);
+                Percentage = ((double)timeSpan.Ticks / (double)TotalTime.Ticks) * 100;
             }
-            catch { }
+            catch
+            {
+            }
 
             OnProgressChanged?.Invoke(Percentage);
         }
