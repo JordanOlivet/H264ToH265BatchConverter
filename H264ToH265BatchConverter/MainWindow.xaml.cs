@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -30,9 +31,16 @@ namespace H264ToH265BatchConverter
             InitializeComponent();
             DataContext = this;
 
+            DisplayApplicationVersion();
+
             FileConversion.GlobalLogger += (log) => { Log(log); };
 
             CurrentFiles = new List<FileConversion>();
+        }
+
+        private void DisplayApplicationVersion()
+        {
+            tbVersion.Text = "v" + Assembly.GetExecutingAssembly()?.GetName()?.Version?.ToString();
         }
 
         #region Conversion Management
