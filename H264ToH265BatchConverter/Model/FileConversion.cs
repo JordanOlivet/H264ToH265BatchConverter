@@ -16,13 +16,13 @@ namespace H264ToH265BatchConverter.Model
         private const string CONST_PathImageConversionOk = @"Resources\ok.png";
         private const string CONST_PathImageConversionNotNecessary = @"Resources\conversionNotNecessary.png";
         private const string CONST_PathImageConversionKo = @"Resources\cross.png";
-        private const string CONST_PathImageConversionAlreadyDone = @"Resources\convertionAlreadyDone.png";
+        private const string CONST_PathImageConversionAlreadyDone = @"Resources\conversionAlreadyDone.png";
 
         public static Action<string> GlobalLogger { get; set; }
 
         public FileConversionViewModel File { get; set; }
 
-        public bool ConversionSuccessed { get; set; }
+        public bool ConversionSucceeded { get; set; }
 
         public ConversionStatus ConversionStatus { get; set; } = ConversionStatus.NotStarted;
 
@@ -77,14 +77,14 @@ namespace H264ToH265BatchConverter.Model
                     }
                     else
                     {
-                        RemoveFile(File.File);
+                        RemoveFile(Output);
                         UpdateFileImageSource(CONST_PathImageConversionNotNecessary);
                     }
-                    ConversionSuccessed = true;
+                    ConversionSucceeded = true;
                 }
                 else
                 {
-                    ConversionSuccessed = false;
+                    ConversionSucceeded = false;
 
                     if (ConversionStatus == ConversionStatus.Failed)
                     {
@@ -111,9 +111,7 @@ namespace H264ToH265BatchConverter.Model
 
         private bool OutputSmallerThanInput(FileObject output, FileObject input)
         {
-            bool outputSmallerThanInput = true;
-
-            if (output.Size > input.Size) { outputSmallerThanInput = false; }
+            bool outputSmallerThanInput = !(output.Size > input.Size);
 
             return outputSmallerThanInput;
         }
@@ -127,7 +125,7 @@ namespace H264ToH265BatchConverter.Model
         {
             Converter?.Stop();
 
-            if (System.IO.File.Exists(File.File.FullName) && !string.IsNullOrWhiteSpace(Output.FullName) && ConversionSuccessed)
+            if (System.IO.File.Exists(File.File.FullName) && !string.IsNullOrWhiteSpace(Output.FullName) && ConversionSucceeded)
             {
                 FileInfo fi = new(Output.FullName);
 

@@ -46,7 +46,7 @@
     <Resource Include="Resources\pending.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Resources\convertionAlreadyDone.png">
+    <Resource Include="Resources\conversionAlreadyDone.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\wait.gif">

@@ -79,7 +79,7 @@ namespace H264ToH265BatchConverter
         {
             string log = "";
 
-            if (file.ConversionSuccessed)
+            if (file.ConversionSucceeded)
             {
                 log = file.File.File.FullName + " converted !";
             }
