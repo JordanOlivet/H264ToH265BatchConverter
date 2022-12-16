@@ -20,7 +20,7 @@ namespace H264ToH265BatchConverter
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static readonly List<string> CONST_FileExtensionsSupported = new List<string>{ ".mp4", ".mkv" };
+        public static readonly List<string> CONST_FileExtensionsSupported = new List<string> { ".mp4", ".mkv" };
 
         public List<FileConversion> CurrentFiles { get; set; }
 
@@ -44,6 +44,7 @@ namespace H264ToH265BatchConverter
         }
 
         #region Conversion Management
+
         private async void ConvertDirectory(DirectoryInfo dir, bool recursive = true)
         {
             if (dir != null)
@@ -72,16 +73,26 @@ namespace H264ToH265BatchConverter
 
             await task.WaitAsync(new CancellationToken());
         }
+
         #endregion
 
         #region Logs
+
         private void LogConversionResult(FileConversion file)
         {
             string log = "";
 
-            if (file.ConversionSuccessed)
+
+            if (file.ConversionSucceeded)
             {
-                log = file.File.File.FullName + " converted !";
+                if (file.ConversionStatus == ConversionStatus.NotNecessary)
+                {
+                    log = file.File.File.FullName + " : output file size exceeds file size input !";
+                }
+                else
+                {
+                    log = file.File.File.FullName + " converted !";
+                }
             }
             else
             {
@@ -100,13 +111,20 @@ namespace H264ToH265BatchConverter
 
         private void Log(string message)
         {
-            if (string.IsNullOrWhiteSpace(message)) { return; }
-            tbLogs.Dispatcher?.Invoke(() => tbLogs.AppendText("[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine));
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            tbLogs.Dispatcher?.Invoke(() =>
+                tbLogs.AppendText("[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine));
             tbLogs.Dispatcher?.Invoke(() => tbLogs.ScrollToEnd());
         }
+
         #endregion
 
         #region UI Events
+
         private void btnConvertSelectedFolders_Click(object sender, RoutedEventArgs e)
         {
             string inputFolder;
@@ -137,7 +155,10 @@ namespace H264ToH265BatchConverter
             };
             openFileDialog.ShowDialog();
 
-            if (openFileDialog.FileNames.Length == 0) { return; }
+            if (openFileDialog.FileNames.Length == 0)
+            {
+                return;
+            }
 
             wrpPanelFiles.Children.Clear();
             CurrentFiles.Clear();
@@ -194,9 +215,11 @@ namespace H264ToH265BatchConverter
                 ConvertDirectory(dir, false);
             }
         }
+
         #endregion
 
         #region UI Update
+
         private void UpdateFileComponents(DirectoryInfo dir, bool recursive = true)
         {
             wrpPanelFiles.Children.Clear();
@@ -211,7 +234,11 @@ namespace H264ToH265BatchConverter
 
             foreach (var f in files)
             {
-                if (!CONST_FileExtensionsSupported.Contains(f.Extension.ToLower())) { continue; }
+                if (!CONST_FileExtensionsSupported.Contains(f.Extension.ToLower()))
+                {
+                    continue;
+                }
+
                 AddFileComponent(f);
             }
 
@@ -238,9 +265,14 @@ namespace H264ToH265BatchConverter
         {
             var total = CurrentFiles.Count;
 
-            var done = CurrentFiles.Where(o => o.ConversionStatus != ConversionStatus.Pending && o.ConversionStatus != ConversionStatus.NotStarted).Count();
+            var done = CurrentFiles.Where(o =>
+                    o.ConversionStatus != ConversionStatus.Pending && o.ConversionStatus != ConversionStatus.NotStarted)
+                .Count();
 
-            if(total == 0) { return; }
+            if (total == 0)
+            {
+                return;
+            }
 
             var currentPercentage = done * 100 / total;
 

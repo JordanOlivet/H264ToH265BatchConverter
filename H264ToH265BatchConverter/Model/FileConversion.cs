@@ -12,16 +12,18 @@ namespace H264ToH265BatchConverter.Model
     public class FileConversion
     {
         private const string CONST_PathImagePending = @"Resources\pending.png";
+
         //private const string CONST_PathImagePending = @"Resources\wait.gif";
         private const string CONST_PathImageConversionOk = @"Resources\ok.png";
+        private const string CONST_PathImageConversionNotNecessary = @"Resources\conversionNotNecessary.png";
         private const string CONST_PathImageConversionKo = @"Resources\cross.png";
-        private const string CONST_PathImageConversionAlreadyDone = @"Resources\convertionAlreadyDone.png";
+        private const string CONST_PathImageConversionAlreadyDone = @"Resources\conversionAlreadyDone.png";
 
         public static Action<string> GlobalLogger { get; set; }
 
         public FileConversionViewModel File { get; set; }
 
-        public bool ConversionSuccessed { get; set; }
+        public bool ConversionSucceeded { get; set; }
 
         public ConversionStatus ConversionStatus { get; set; } = ConversionStatus.NotStarted;
 
@@ -29,9 +31,9 @@ namespace H264ToH265BatchConverter.Model
 
         public H264Converter Converter { get; set; }
 
-        public  Task InternalTask { get; private set; }
+        public Task InternalTask { get; private set; }
 
-        private string Output { get; set; }
+        private FileObject Output { get; set; }
 
         private Stopwatch Watch { get; set; }
 
@@ -61,27 +63,38 @@ namespace H264ToH265BatchConverter.Model
 
                 //Converter.OnMessageDispath += Converter_MessageDispatch;
 
-                Output = File.File.FullName.Replace(File.File.Extension, string.Empty) + "_h265" + File.File.Extension;
+                Output = new FileObject(File.File.FullName.Replace(File.File.Extension, string.Empty) + "_h265" +
+                                        File.File.Extension);
 
                 UpdateFileImageSource(CONST_PathImagePending);
 
-                ConversionStatus = Converter.ToH265(File.File.FullName, Output);
+                ConversionStatus = Converter.ToH265(File.File.FullName, Output.FullName);
 
                 if (ConversionStatus == ConversionStatus.Success)
                 {
-                    RemoveInputAndRenameOutput(Output);
-                    UpdateFileImageSource(CONST_PathImageConversionOk);
-                    ConversionSuccessed = true;
+                    if (OutputSmallerThanInput(Output, File.File))
+                    {
+                        RemoveInputAndRenameOutput(Output);
+                        UpdateFileImageSource(CONST_PathImageConversionOk);
+                    }
+                    else
+                    {
+                        ConversionStatus = ConversionStatus.NotNecessary;
+                        RemoveFile(Output);
+                        UpdateFileImageSource(CONST_PathImageConversionNotNecessary);
+                    }
+
+                    ConversionSucceeded = true;
                 }
                 else
                 {
-                    ConversionSuccessed = false;
+                    ConversionSucceeded = false;
 
                     if (ConversionStatus == ConversionStatus.Failed)
                     {
                         UpdateFileImageSource(CONST_PathImageConversionKo);
                     }
-                    else if(ConversionStatus == ConversionStatus.AlreadyConverted)
+                    else if (ConversionStatus == ConversionStatus.AlreadyConverted)
                     {
                         UpdateFileImageSource(CONST_PathImageConversionAlreadyDone);
                         // Forcing the progress to 100% because the file is indeed already converted
@@ -100,27 +113,39 @@ namespace H264ToH265BatchConverter.Model
             return InternalTask;
         }
 
+        private bool OutputSmallerThanInput(FileObject output, FileObject input)
+        {
+            bool outputSmallerThanInput = !(output.Size > input.Size);
+
+            return outputSmallerThanInput;
+        }
+
+        private void RemoveFile(FileObject fileToDelete)
+        {
+            fileToDelete.Delete();
+        }
+
         public void StopConversion()
         {
             Converter?.Stop();
 
-            if (System.IO.File.Exists(File.File.FullName) && !string.IsNullOrWhiteSpace(Output) && ConversionSuccessed)
+            if (System.IO.File.Exists(File.File.FullName) && !string.IsNullOrWhiteSpace(Output.FullName) &&
+                ConversionSucceeded)
             {
-                FileInfo fi = new(Output);
-                
-                if(fi.Exists)
+                FileInfo fi = new(Output.FullName);
+
+                if (fi.Exists)
                 {
                     fi.Delete();
                 }
             }
         }
 
-        private void RemoveInputAndRenameOutput(string outputPath)
+        private void RemoveInputAndRenameOutput(FileObject output)
         {
             string tmp = File.File.FullName;
-            File.File.Delete();
-            FileObject fOutput = new(outputPath);
-            fOutput.MoveTo(tmp);
+            RemoveFile(File.File);
+            output.MoveTo(tmp);
         }
 
         private void Converter_OnProgressChanged(double percentage)

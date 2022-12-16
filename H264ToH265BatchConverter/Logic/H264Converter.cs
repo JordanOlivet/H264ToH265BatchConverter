@@ -11,6 +11,7 @@ namespace H264ToH265BatchConverter.Logic
         AlreadyConverted = 2,
         Pending = 3,
         NotStarted = 4,
+        NotNecessary= 5
     }
 
     public class H264Converter
@@ -127,15 +128,15 @@ namespace H264ToH265BatchConverter.Logic
 
             // log = log.Replace("time=", ";;;;");
             // var res = log.Split(";;;;");
-            
+
             int pFrom = log.IndexOf("time=") + "time=".Length;
             int pTo = log.LastIndexOf(" bitrate=");
             String result = log.Substring(pFrom, pTo - pFrom);
             try
             {
-            
+
                 string currentTime = result;
-                
+
                 int hours = Convert.ToInt32(currentTime.Split(":")[0]);
                 int minutes = Convert.ToInt32(currentTime.Split(":")[1]);
                 string secondsMilliseconds = currentTime.Split(":")[2];
