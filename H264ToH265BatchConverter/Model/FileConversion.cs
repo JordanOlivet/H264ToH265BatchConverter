@@ -18,6 +18,7 @@ namespace H264ToH265BatchConverter.Model
         private const string CONST_PathImageConversionNotNecessary = @"Resources\conversionNotNecessary.png";
         private const string CONST_PathImageConversionKo = @"Resources\cross.png";
         private const string CONST_PathImageConversionAlreadyDone = @"Resources\conversionAlreadyDone.png";
+        private const string CONST_H265Suffix = @"_h265";
 
         public static Action<string> GlobalLogger { get; set; }
 
@@ -63,8 +64,7 @@ namespace H264ToH265BatchConverter.Model
 
                 //Converter.OnMessageDispath += Converter_MessageDispatch;
 
-                Output = new FileObject(File.File.FullName.Replace(File.File.Extension, string.Empty) + "_h265" +
-                                        File.File.Extension);
+                Output = new FileObject(File.File.FullName.Replace(File.File.Extension, string.Empty) + CONST_H265Suffix + File.File.Extension);
 
                 UpdateFileImageSource(CONST_PathImagePending);
 
@@ -129,15 +129,9 @@ namespace H264ToH265BatchConverter.Model
         {
             Converter?.Stop();
 
-            if (System.IO.File.Exists(File.File.FullName) && !string.IsNullOrWhiteSpace(Output.FullName) &&
-                ConversionSucceeded)
+            if (File.File.Exists() && Output.Exists() && Output.FullName.Contains(CONST_H265Suffix))
             {
-                FileInfo fi = new(Output.FullName);
-
-                if (fi.Exists)
-                {
-                    fi.Delete();
-                }
+                Output.Delete();
             }
         }
 

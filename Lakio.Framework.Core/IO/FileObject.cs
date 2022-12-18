@@ -30,7 +30,7 @@ namespace Lakio.Framework.Core.IO
         {
             string newPath = PathIO.Combine(Infos.DirectoryName, newName + Extension);
 
-            try 
+            try
             {
                 MoveTo(newPath, overwrite);
             }
@@ -55,6 +55,11 @@ namespace Lakio.Framework.Core.IO
         public void MoveTo(string destination, bool overwrite = false)
         {
             Infos.MoveTo(destination, overwrite);
+        }
+
+        public bool Exists()
+        {
+            return !string.IsNullOrWhiteSpace(FullName) && File.Exists(FullName);
         }
     }
 }
