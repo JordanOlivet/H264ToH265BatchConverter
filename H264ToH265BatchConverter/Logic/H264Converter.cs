@@ -44,7 +44,7 @@ namespace H264ToH265BatchConverter.Logic
                 MpegProcess = new(@".\ffmpeg\ffmpeg.exe")
                 {
                     Arguments =
-                        $@" -c:v h264_cuvid -i ""{input}"" -hide_banner -loglevel error -stats -v verbose -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 1643k -minrate 1150k -maxrate 2135k -bufsize 3286k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a aac -c:s copy -max_muxing_queue_size 9999 ""{output}""",
+                        $@" -i ""{input}"" -hide_banner -loglevel error -stats -v verbose -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 1643k -minrate 1150k -maxrate 2135k -bufsize 3286k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a aac -c:s copy -max_muxing_queue_size 9999 ""{output}""",
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
