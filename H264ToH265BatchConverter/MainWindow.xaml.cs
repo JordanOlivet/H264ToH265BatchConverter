@@ -8,10 +8,10 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Input;
 
 namespace H264ToH265BatchConverter
 {
@@ -25,6 +25,7 @@ namespace H264ToH265BatchConverter
         public List<FileConversion> CurrentFiles { get; set; }
 
         public bool Recursive = true;
+        public bool ShowAlreadyConvertedFiles = false;
 
         public MainWindow()
         {
@@ -45,33 +46,91 @@ namespace H264ToH265BatchConverter
 
         #region Conversion Management
 
-        private async void ConvertDirectory(DirectoryInfo dir, bool recursive = true)
+        private async Task DetectEncodingBeforeConversionAsync()
         {
-            if (dir != null)
-            {
-                UpdateFileComponents(dir, recursive);
+            if (CurrentFiles == null || CurrentFiles.Count == 0) { return; }
 
-                foreach (var file in CurrentFiles)
+            Dispatcher?.Invoke(() =>
+            {
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            });
+
+            Log("Start analyzing files encoding ...");
+
+            foreach (var file in CurrentFiles)
+            {
+                await Task.Run(async () =>
                 {
-                    await ConvertFile(file);
+                    await AsyncManager.DetectEncodingAsync(file, encoding =>
+                    {
+                        if (encoding.Equals("hevc"))
+                        {
+                            file.ConversionStatus = ConversionStatus.AlreadyConverted;
+                            file.ConversionSucceeded = false;
+                            file.SetFileAlreadyConverted();
+                            file.Watch = new System.Diagnostics.Stopwatch();
+                            file.UpdateFileConversionDuration();
+                            file.SetVisibility(ShowAlreadyConvertedFiles);
+
+                            LogConversionResult(file);
+
+                            UpdateTotalProgress();
+
+                            System.Windows.Forms.Application.DoEvents();
+                        }
+                    });
+                });
+
+                System.Windows.Forms.Application.DoEvents();
+            }
+
+            Log("All files have been analyzed. Only files in h264 encoding will be converted.");
+
+            Dispatcher?.Invoke(() =>
+            {
+                Mouse.OverrideCursor = null;
+            });
+        }
+
+        private List<FileInfo> GetFilesFromDirectory(DirectoryInfo dir)
+        {
+            var result = new List<FileInfo>();
+            var files = dir.EnumerateFiles();
+
+            foreach (var f in files)
+            {
+                if (!CONST_FileExtensionsSupported.Contains(f.Extension.ToLower()))
+                {
+                    continue;
+                }
+
+                result.Add(f);
+            }
+
+            if (Recursive)
+            {
+                var dirs = dir.EnumerateDirectories();
+
+                foreach (var d in dirs)
+                {
+                    result.AddRange(GetFilesFromDirectory(d));
                 }
             }
+
+            return result;
         }
 
-        private async Task ConvertFile(FileConversion file)
+        private void DisplayAllFiles(List<FileInfo> files)
         {
-            await ConvertAsync(file);
+            ClearUIFilesAndResetProgress();
 
-            LogConversionResult(file);
+            foreach (FileInfo file in files)
+            {
+                AddFileComponent(file);
+                System.Windows.Forms.Application.DoEvents();
+            }
 
-            UpdateTotalProgress();
-        }
-
-        private async Task ConvertAsync(FileConversion file)
-        {
-            var task = file.Convert();
-
-            await task.WaitAsync(new CancellationToken());
+            System.Windows.Forms.Application.DoEvents();
         }
 
         #endregion
@@ -116,8 +175,7 @@ namespace H264ToH265BatchConverter
                 return;
             }
 
-            tbLogs.Dispatcher?.Invoke(() =>
-                tbLogs.AppendText("[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine));
+            tbLogs.Dispatcher?.Invoke(() => tbLogs.AppendText("[" + DateTime.Now.ToString("G") + "] " + message + Environment.NewLine));
             tbLogs.Dispatcher?.Invoke(() => tbLogs.ScrollToEnd());
         }
 
@@ -125,11 +183,9 @@ namespace H264ToH265BatchConverter
 
         #region UI Events
 
-        private void btnConvertSelectedFolders_Click(object sender, RoutedEventArgs e)
+        private async void btnSelectFolders_Click(object sender, RoutedEventArgs e)
         {
             string inputFolder;
-
-            //CommonOpenFileDialog dialog = new CommonOpenFileDialog();
 
             FolderBrowserDialog openFolderDialog = new();
             openFolderDialog.ShowDialog();
@@ -138,15 +194,19 @@ namespace H264ToH265BatchConverter
 
             if (Directory.Exists(inputFolder))
             {
-                progressBarTotal.Value = 0;
+                btnStartConversion.IsEnabled = false;
 
                 DirectoryInfo dir = new(inputFolder);
 
-                ConvertDirectory(dir, Recursive);
+                DisplayAllFiles(GetFilesFromDirectory(dir));
+
+                await DetectEncodingBeforeConversionAsync();
+
+                btnStartConversion.IsEnabled = true;
             }
         }
 
-        private async void btnConvertSelectedFiles_Click(object sender, RoutedEventArgs e)
+        private async void btnSelectFiles_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new()
             {
@@ -160,24 +220,43 @@ namespace H264ToH265BatchConverter
                 return;
             }
 
-            wrpPanelFiles.Children.Clear();
-            CurrentFiles.Clear();
-            progressBarTotal.Value = 0;
+            btnStartConversion.IsEnabled = false;
 
+            var files = new List<FileInfo>();
             foreach (var inputFile in openFileDialog.FileNames)
             {
                 if (File.Exists(inputFile))
                 {
                     FileInfo f = new(inputFile);
 
-                    AddFileComponent(f);
+                    files.Add(f);
                 }
             }
 
-            foreach (var file in CurrentFiles)
+            DisplayAllFiles(files);
+
+            await DetectEncodingBeforeConversionAsync();
+
+            btnStartConversion.IsEnabled = true;
+        }
+
+
+        private async void btnStartConversion_Click(object sender, RoutedEventArgs e)
+        {
+            btnSelectedFiles.IsEnabled = false;
+            btnSelectedFolders.IsEnabled = false;
+
+            Log("Conversion started ...");
+
+            foreach (var file in CurrentFiles.Where(o => o.ConversionStatus == ConversionStatus.NotStarted))
             {
-                await ConvertFile(file);
+                await AsyncManager.ConvertAsync(file);
             }
+
+            Log("Conversion done.");
+
+            btnSelectedFiles.IsEnabled = true;
+            btnSelectedFolders.IsEnabled = true;
         }
 
         private void chkbRecursive_Checked(object sender, RoutedEventArgs e)
@@ -201,32 +280,35 @@ namespace H264ToH265BatchConverter
 
         private void btnTest_Click(object sender, RoutedEventArgs e)
         {
-            string inputFolder;
+            // string inputFolder;
 
-            FolderBrowserDialog openFolderDialog = new();
-            openFolderDialog.ShowDialog();
+            // FolderBrowserDialog openFolderDialog = new();
+            // openFolderDialog.ShowDialog();
 
-            inputFolder = openFolderDialog.SelectedPath;
+            // inputFolder = openFolderDialog.SelectedPath;
 
-            if (Directory.Exists(inputFolder))
-            {
-                DirectoryInfo dir = new(inputFolder);
+            // if (Directory.Exists(inputFolder))
+            // {
+            //     DirectoryInfo dir = new(inputFolder);
 
-                ConvertDirectory(dir, false);
-            }
+            // }
+        }
+
+        private void chkbShowAlreadyConverted_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ShowAlreadyConvertedFiles = false;
+            UpdateFilesAlreadyConvertedVisibility();
+        }
+
+        private void chkbShowAlreadyConverted_Checked(object sender, RoutedEventArgs e)
+        {
+            ShowAlreadyConvertedFiles = true;
+            UpdateFilesAlreadyConvertedVisibility();
         }
 
         #endregion
 
         #region UI Update
-
-        private void UpdateFileComponents(DirectoryInfo dir, bool recursive = true)
-        {
-            wrpPanelFiles.Children.Clear();
-            CurrentFiles.Clear();
-
-            AddFilesComponentFromFolder(dir, recursive);
-        }
 
         private void AddFilesComponentFromFolder(DirectoryInfo dir, bool recursive = true)
         {
@@ -265,9 +347,7 @@ namespace H264ToH265BatchConverter
         {
             var total = CurrentFiles.Count;
 
-            var done = CurrentFiles.Where(o =>
-                    o.ConversionStatus != ConversionStatus.Pending && o.ConversionStatus != ConversionStatus.NotStarted)
-                .Count();
+            var done = CurrentFiles.Where(o => o.ConversionStatus != ConversionStatus.Pending && o.ConversionStatus != ConversionStatus.NotStarted).Count();
 
             if (total == 0)
             {
@@ -279,6 +359,27 @@ namespace H264ToH265BatchConverter
             progressBarTotal.Dispatcher?.Invoke(() => { progressBarTotal.Value = currentPercentage; });
         }
 
+        private void ClearUIFilesAndResetProgress()
+        {
+            wrpPanelFiles.Children.Clear();
+            CurrentFiles.Clear();
+            progressBarTotal.Value = 0;
+        }
+
+
+
+        private void UpdateFilesAlreadyConvertedVisibility()
+        {
+            foreach (var file in CurrentFiles)
+            {
+                if (file.ConversionStatus == ConversionStatus.AlreadyConverted)
+                {
+                    file.SetVisibility(ShowAlreadyConvertedFiles);
+                }
+            }
+        }
+
         #endregion
+
     }
 }

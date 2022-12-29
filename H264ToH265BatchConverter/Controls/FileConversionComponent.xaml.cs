@@ -8,10 +8,6 @@ namespace H264ToH265BatchConverter.Controls
     /// </summary>
     public partial class FileConversionComponent : UserControl
     {
-        public string FileName { get; private set; }
-
-        public string Duration { get; private set; }
-
         public FileConversionViewModel File { get; set; }
 
         public FileConversionComponent()
@@ -28,8 +24,6 @@ namespace H264ToH265BatchConverter.Controls
             DataContext = this;
 
             File = file;
-            FileName = File.Name;
-            Duration = "0";
         }
 
 

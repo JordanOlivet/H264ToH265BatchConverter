@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
-using System.Threading;
 
 namespace Lakio.Framework.Core.System
 {
@@ -28,6 +24,7 @@ namespace Lakio.Framework.Core.System
         public int ExitCode { get; set; }
 
         public List<string> Logs { get; private set; }
+        public TimeSpan TotalExecutionTime { get; private set; }
 
         public delegate void LogRaised(string log);
 
@@ -50,7 +47,7 @@ namespace Lakio.Framework.Core.System
             internalProcess.StartInfo.UseShellExecute = UseShellExecute;
             internalProcess.StartInfo.CreateNoWindow = CreateNoWindow;
 
-            if(logger != null)
+            if (logger != null)
             {
                 OnLogRaised += (log) => { logger(log); };
             }
@@ -91,10 +88,12 @@ namespace Lakio.Framework.Core.System
                             }
                         }
                     }
+                    return;
                 };
 
                 internalWorker.RunWorkerCompleted += (o, e) =>
                 {
+                    TotalExecutionTime = internalProcess.TotalProcessorTime;
                     ExitCode = internalProcess?.ExitCode ?? 0;
                     internalProcess?.Close();
                 };
@@ -106,7 +105,7 @@ namespace Lakio.Framework.Core.System
 
         public void Stop()
         {
-            if(internalProcess != null)
+            if (internalProcess != null)
             {
                 try
                 {
@@ -124,7 +123,7 @@ namespace Lakio.Framework.Core.System
                 catch { }
             }
 
-            if(internalWorker != null && internalWorker.IsBusy)
+            if (internalWorker != null && internalWorker.IsBusy)
             {
                 internalWorker.CancelAsync();
                 internalWorker.Dispose();
@@ -134,13 +133,14 @@ namespace Lakio.Framework.Core.System
 
         public void WaitForCompletion()
         {
-            if(internalWorker != null && internalWorker.IsBusy)
+            if (internalWorker != null && internalWorker.IsBusy)
             {
-                while(internalWorker != null && internalWorker.IsBusy)
+                while (internalWorker != null && internalWorker.IsBusy)
                 {
-                    Thread.Sleep(500);
+                    Thread.Sleep(10);
                 }
             }
         }
+
     }
 }

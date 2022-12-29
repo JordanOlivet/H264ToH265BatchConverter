@@ -11,7 +11,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
-            <RowDefinition Height="75"/>
+            <RowDefinition Height="100"/>
             <RowDefinition Height="2*"/>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="24"/>
@@ -23,19 +23,23 @@
 
         <TextBlock x:Name="tbVersion" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8,5" Foreground="Gray"/>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8,0,8,0">
-            
-            <Button x:Name="btnConvertSelectedFolders" Click="btnConvertSelectedFolders_Click" Height="50" Padding="8" Margin="0,0,8,0" Content="Convert Selected Folder" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip="Convert all video files contained in selected folders"/>
-            <Button x:Name="btnConvertSelectedFiles" Click="btnConvertSelectedFiles_Click" Height="50"  Padding="8" Content="Convert Selected Files" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip="Convert only selected video files."/>
+        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="8,0,8,0">
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8,0,8,0">
 
-            <Border Margin="8,12,8,12" BorderBrush="Gray" BorderThickness="1" Padding="8">
-                <StackPanel Orientation="Horizontal">
-                    <CheckBox x:Name="chkbRecursive" Content="Recursive searching" IsChecked="true" ToolTip="Defines if the process will search for files within sub directories" VerticalAlignment="Center" VerticalContentAlignment="Center" Checked="chkbRecursive_Checked" Unchecked="chkbRecursive_Unchecked"/>
-                </StackPanel>
-            </Border>
+                <Button x:Name="btnSelectedFolders" Click="btnSelectFolders_Click" Height="35" Padding="8" Margin="0,0,8,0" Content="Select Folder" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip="Select video files contained in selected folders"/>
+                <Button x:Name="btnSelectedFiles" Click="btnSelectFiles_Click" Height="35"  Padding="8" Content="Select Files" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip="Select only video files."/>
 
-            <!--<Button x:Name="btnTest" Click="btnTest_Click" Height="50"  Padding="8" Content="Test" VerticalAlignment="Center" HorizontalAlignment="Left"/>-->
+                <Border Margin="8,12,8,12" BorderBrush="Gray" BorderThickness="1" Padding="8">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="chkbRecursive" Content="Recursive searching" IsChecked="true" ToolTip="Defines if the process will search for files within sub directories" VerticalAlignment="Center" VerticalContentAlignment="Center" Checked="chkbRecursive_Checked" Unchecked="chkbRecursive_Unchecked" Margin="0,0,8,0"/>
+                        <CheckBox x:Name="chkbShowAlreadyConverted" Content="Show Already Converted Files" IsChecked="false" ToolTip="If checked, files already converted will be displayed with the others files. If unchecked, only non converted file will be displayed" VerticalAlignment="Center" VerticalContentAlignment="Center" Checked="chkbShowAlreadyConverted_Checked" Unchecked="chkbShowAlreadyConverted_Unchecked" Margin="0,0,8,0"/>
+                    </StackPanel>
+                </Border>
 
+                <!--<Button x:Name="btnTest" Click="btnTest_Click" Height="50"  Padding="8" Content="Test" VerticalAlignment="Center" HorizontalAlignment="Left"/>-->
+
+            </StackPanel>
+            <Button x:Name="btnStartConversion" Height="35" Margin="8,0" Content="Start Conversion" IsEnabled="False" Click="btnStartConversion_Click" ToolTip="Convert all video files selected"/>
         </StackPanel>
 
         <Border x:Name="borderContent" Grid.Row="2" HorizontalAlignment="Stretch">

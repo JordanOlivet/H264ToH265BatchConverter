@@ -6,7 +6,7 @@ using System.Windows.Media.Imaging;
 
 namespace H264ToH265BatchConverter.ViewModels
 {
-    public  class FileConversionViewModel : DependencyObject
+    public class FileConversionViewModel : DependencyObject
     {
         private const string CONST_PathImageDefault = @"Resources\default.png";
 
@@ -42,6 +42,14 @@ namespace H264ToH265BatchConverter.ViewModels
             set => SetValue(ProgressProperty, value);
         }
 
+        public static readonly DependencyProperty FileVisibilityProperty = DependencyProperty.Register("FileVisibility", typeof(Visibility), typeof(FileConversionViewModel));
+
+        public Visibility FileVisibility
+        {
+            get => (Visibility)GetValue(FileVisibilityProperty);
+            set => SetValue(FileVisibilityProperty, value);
+        }
+
         public FileObject File { get; set; }
 
         public FileConversionViewModel(FileObject file)
@@ -50,11 +58,12 @@ namespace H264ToH265BatchConverter.ViewModels
 
             Name = File.FullName;
             Progress = 0;
+            FileVisibility = Visibility.Visible;
 
             SetImageSource(CONST_PathImageDefault);
         }
 
-        public  void SetImageSource(string imagePath)
+        public void SetImageSource(string imagePath)
         {
             var uri = new Uri(Path.GetFullPath(imagePath));
 

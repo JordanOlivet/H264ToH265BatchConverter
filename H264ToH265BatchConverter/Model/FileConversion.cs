@@ -3,7 +3,6 @@ using H264ToH265BatchConverter.ViewModels;
 using Lakio.Framework.Core.IO;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -36,7 +35,7 @@ namespace H264ToH265BatchConverter.Model
 
         private FileObject Output { get; set; }
 
-        private Stopwatch Watch { get; set; }
+        internal Stopwatch Watch { get; set; }
 
         public FileConversion(FileConversionViewModel file)
         {
@@ -96,9 +95,7 @@ namespace H264ToH265BatchConverter.Model
                     }
                     else if (ConversionStatus == ConversionStatus.AlreadyConverted)
                     {
-                        UpdateFileImageSource(CONST_PathImageConversionAlreadyDone);
-                        // Forcing the progress to 100% because the file is indeed already converted
-                        Converter_OnProgressChanged(100);
+                        SetFileAlreadyConverted();
                     }
                 }
 
@@ -115,6 +112,8 @@ namespace H264ToH265BatchConverter.Model
 
         private bool OutputSmallerThanInput(FileObject output, FileObject input)
         {
+            if (!output.Exists()) { return false; }
+
             bool outputSmallerThanInput = !(output.Size > input.Size);
 
             return outputSmallerThanInput;
@@ -122,6 +121,8 @@ namespace H264ToH265BatchConverter.Model
 
         private void RemoveFile(FileObject fileToDelete)
         {
+            if (!fileToDelete.Exists()) { return; }
+
             fileToDelete.Delete();
         }
 
@@ -129,7 +130,7 @@ namespace H264ToH265BatchConverter.Model
         {
             Converter?.Stop();
 
-            if (File.File.Exists() && Output.Exists() && Output.FullName.Contains(CONST_H265Suffix))
+            if (File.File.Exists() && (Output?.Exists() ?? false) && Output.FullName.Contains(CONST_H265Suffix))
             {
                 Output.Delete();
             }
@@ -142,24 +143,31 @@ namespace H264ToH265BatchConverter.Model
             output.MoveTo(tmp);
         }
 
-        private void Converter_OnProgressChanged(double percentage)
+        internal void Converter_OnProgressChanged(double percentage)
         {
             File.Dispatcher?.Invoke(() => { File.Progress = percentage; });
         }
 
-        //private void Converter_MessageDispatch(string message)
-        //{
-        //    GlobalLogger?.Invoke(message);
-        //}
-
-        private void UpdateFileImageSource(string pathImage)
+        internal void UpdateFileImageSource(string pathImage)
         {
             File.Dispatcher?.Invoke(() => { File.SetImageSource(pathImage); });
         }
 
-        private void UpdateFileConversionDuration()
+        internal void UpdateFileConversionDuration()
         {
             File.Dispatcher?.Invoke(() => { File.Duration = Watch.Elapsed.ToString(@"mm\:ss"); });
+        }
+
+        internal void SetFileAlreadyConverted()
+        {
+            UpdateFileImageSource(CONST_PathImageConversionAlreadyDone);
+            // Forcing the progress to 100% because the file is indeed already converted
+            Converter_OnProgressChanged(100);
+        }
+
+        internal void SetVisibility(bool visible)
+        {
+            File.Dispatcher?.Invoke(() => { File.FileVisibility = visible ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed; });
         }
     }
 }
