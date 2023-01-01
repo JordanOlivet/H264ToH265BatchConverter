@@ -11,7 +11,5 @@ Initial usage :
 
 To Do/Ideas :
 
-* Improved UI with a lot of feedback, progress per file, per folder ...
-* Some sort of detection of the current encodig of the input file in order to not convert it if it is already in h265 encoding.
 * More customization of the process of conversion (choice of preset, more logs, convert audio etc ...)
 * And many more !
