@@ -245,12 +245,17 @@ namespace H264ToH265BatchConverter
         {
             btnSelectedFiles.IsEnabled = false;
             btnSelectedFolders.IsEnabled = false;
+            btnStartConversion.IsEnabled = false;
 
             Log("Conversion started ...");
 
             foreach (var file in CurrentFiles.Where(o => o.ConversionStatus == ConversionStatus.NotStarted))
             {
-                await AsyncManager.ConvertAsync(file);
+                await AsyncManager.ConvertAsync(file, f =>
+                {
+                    LogConversionResult(f);
+                    UpdateTotalProgress();
+                });
             }
 
             Log("Conversion done.");

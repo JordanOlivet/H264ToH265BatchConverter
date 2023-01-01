@@ -42,7 +42,7 @@ namespace H264ToH265BatchConverter.Model
             File = file;
         }
 
-        public Task Convert()
+        public Task Convert(Action<FileConversion> action = null)
         {
             InternalTask = new(() =>
             {
@@ -103,6 +103,8 @@ namespace H264ToH265BatchConverter.Model
                 timer.Stop();
                 TotalMinutes = Watch.Elapsed;
                 UpdateFileConversionDuration();
+
+                action?.Invoke(this);
             });
 
             InternalTask.Start();

@@ -7,9 +7,9 @@ namespace H264ToH265BatchConverter.Logic
 {
     internal static class AsyncManager
     {
-        internal static async Task ConvertAsync(FileConversion file)
+        internal static async Task ConvertAsync(FileConversion file, Action<FileConversion> action = null)
         {
-            var task = file.Convert();
+            var task = file.Convert(action);
 
             await task.WaitAsync(new CancellationToken());
         }
