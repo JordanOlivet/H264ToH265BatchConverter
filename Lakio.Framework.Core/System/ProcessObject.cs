@@ -93,7 +93,7 @@ namespace Lakio.Framework.Core.System
 
                 internalWorker.RunWorkerCompleted += (o, e) =>
                 {
-                    TotalExecutionTime = internalProcess.TotalProcessorTime;
+                    TotalExecutionTime = internalProcess?.TotalProcessorTime ?? new TimeSpan();
                     ExitCode = internalProcess?.ExitCode ?? 0;
                     internalProcess?.Close();
                 };

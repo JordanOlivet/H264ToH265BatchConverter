@@ -9,11 +9,6 @@ namespace Lakio.Framework.Core.IO
         public string Extension { get => Infos?.Extension; }
         public long Size { get => Infos?.Length ?? 0; }
 
-        /// <summary>
-        /// Custom status goes here
-        /// </summary>
-        public object Status { get; set; }
-
         public string FullName { get; set; }
 
         public FileInfo Infos { get; set; }
@@ -30,26 +25,26 @@ namespace Lakio.Framework.Core.IO
         {
             string newPath = PathIO.Combine(Infos.DirectoryName, newName + Extension);
 
-            try
-            {
-                MoveTo(newPath, overwrite);
-            }
-            catch (Exception e)
-            {
+            // try
+            // {
+            MoveTo(newPath, overwrite);
+            // }
+            // catch (Exception e)
+            // {
 
-                return false;
-            }
+            //     return false;
+            // }
 
             return true;
         }
 
         public void Delete()
         {
-            try
-            {
-                Infos.Delete();
-            }
-            catch { }
+            // try
+            // {
+            Infos.Delete();
+            // }
+            // catch { }
         }
 
         public void MoveTo(string destination, bool overwrite = false)

@@ -1,4 +1,5 @@
 ﻿using H264ToH265BatchConverter.ViewModels;
+using System;
 using System.Windows.Controls;
 
 namespace H264ToH265BatchConverter.Controls
@@ -10,6 +11,8 @@ namespace H264ToH265BatchConverter.Controls
     {
         public FileConversionViewModel File { get; set; }
 
+        public Action<FileConversionComponent> OnClose { get; set; }
+
         public FileConversionComponent()
         {
             InitializeComponent();
@@ -17,15 +20,22 @@ namespace H264ToH265BatchConverter.Controls
             DataContext = this;
         }
 
-        public FileConversionComponent(FileConversionViewModel file)
+        public FileConversionComponent(FileConversionViewModel file, Action<FileConversionComponent> onClose = null)
         {
             InitializeComponent();
 
             DataContext = this;
 
             File = file;
+
+            file.FileComponent = this;
+
+            OnClose = onClose;
         }
 
-
+        private void btnClose_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            OnClose?.Invoke(this);
+        }
     }
 }

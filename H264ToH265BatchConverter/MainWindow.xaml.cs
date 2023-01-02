@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace H264ToH265BatchConverter
 {
@@ -27,6 +28,8 @@ namespace H264ToH265BatchConverter
         public bool Recursive = true;
         public bool ShowAlreadyConvertedFiles = false;
 
+        private static string logFile = @".\log.txt";
+
         public MainWindow()
         {
             InitializeComponent();
@@ -37,6 +40,15 @@ namespace H264ToH265BatchConverter
             FileConversion.GlobalLogger += (log) => { Log(log); };
 
             CurrentFiles = new List<FileConversion>();
+
+            System.Windows.Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
+        }
+
+        private static void Current_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            if (e.Exception is TaskCanceledException) { return; }
+
+            File.WriteAllText(logFile, $"[{DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss")}] {e.Exception.Message}{Environment.NewLine}{e.Exception.StackTrace}");
         }
 
         private void DisplayApplicationVersion()
@@ -162,6 +174,10 @@ namespace H264ToH265BatchConverter
                 else if (file.ConversionStatus == ConversionStatus.AlreadyConverted)
                 {
                     log = file.File.File.FullName + " have been already converted in x265 !";
+                }
+                else if (file.ConversionStatus == ConversionStatus.OutputAlreadyExist)
+                {
+                    log = $"Output file ({file.Output.FullName}) already exist. Conversion aborted !";
                 }
             }
 
@@ -344,8 +360,26 @@ namespace H264ToH265BatchConverter
         {
             var viewModel = new FileConversionViewModel(new Lakio.Framework.Core.IO.FileObject(file.FullName));
 
-            wrpPanelFiles.Children.Add(new FileConversionComponent(viewModel));
-            CurrentFiles.Add(new FileConversion(viewModel));
+            var conv = new FileConversion(viewModel);
+
+            var compo = new FileConversionComponent(viewModel, (comp) =>
+            {
+                if (comp != null && conv != null)
+                {
+                    if (conv.ConversionStatus == ConversionStatus.Pending)
+                    {
+                        return; // Not allowed to remove a file if it is still converting
+                    }
+
+                    conv.ConversionStatus = ConversionStatus.Removed;
+                    wrpPanelFiles.Children.Remove(comp);
+
+                    UpdateTotalProgress();
+                }
+            });
+
+            wrpPanelFiles.Children.Add(compo);
+            CurrentFiles.Add(conv);
         }
 
         private void UpdateTotalProgress()
@@ -380,6 +414,19 @@ namespace H264ToH265BatchConverter
                 if (file.ConversionStatus == ConversionStatus.AlreadyConverted)
                 {
                     file.SetVisibility(ShowAlreadyConvertedFiles);
+                }
+            }
+        }
+
+        private void UpdateUIFileComponents()
+        {
+            foreach (var file in CurrentFiles)
+            {
+                var comp = file?.File?.FileComponent;
+
+                if (comp != null)
+                {
+                    wrpPanelFiles.Children.Remove(comp);
                 }
             }
         }

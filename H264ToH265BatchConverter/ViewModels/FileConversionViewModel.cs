@@ -1,4 +1,6 @@
-﻿using Lakio.Framework.Core.IO;
+﻿using H264ToH265BatchConverter.Controls;
+using H264ToH265BatchConverter.Model;
+using Lakio.Framework.Core.IO;
 using System;
 using System.IO;
 using System.Windows;
@@ -51,6 +53,10 @@ namespace H264ToH265BatchConverter.ViewModels
         }
 
         public FileObject File { get; set; }
+
+        public FileConversion FileConversion { get; set; }
+
+        public FileConversionComponent FileComponent { get; set; }
 
         public FileConversionViewModel(FileObject file)
         {

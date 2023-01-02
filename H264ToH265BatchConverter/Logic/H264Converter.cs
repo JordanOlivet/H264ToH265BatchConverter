@@ -10,7 +10,9 @@ namespace H264ToH265BatchConverter.Logic
         AlreadyConverted = 2,
         Pending = 3,
         NotStarted = 4,
-        NotNecessary = 5
+        NotNecessary = 5,
+        OutputAlreadyExist = 6,
+        Removed = 7,
     }
 
     public class H264Converter

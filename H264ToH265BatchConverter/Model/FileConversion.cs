@@ -33,13 +33,14 @@ namespace H264ToH265BatchConverter.Model
 
         public Task InternalTask { get; private set; }
 
-        private FileObject Output { get; set; }
+        internal FileObject Output { get; set; }
 
         internal Stopwatch Watch { get; set; }
 
         public FileConversion(FileConversionViewModel file)
         {
             File = file;
+            file.FileConversion = this;
         }
 
         public Task Convert(Action<FileConversion> action = null)
@@ -67,7 +68,14 @@ namespace H264ToH265BatchConverter.Model
 
                 UpdateFileImageSource(CONST_PathImagePending);
 
-                ConversionStatus = Converter.ToH265(File.File.FullName, Output.FullName);
+                if (Output.Exists())
+                {
+                    ConversionStatus = ConversionStatus.OutputAlreadyExist;
+                }
+                else
+                {
+                    ConversionStatus = Converter.ToH265(File.File.FullName, Output.FullName);
+                }
 
                 if (ConversionStatus == ConversionStatus.Success)
                 {
@@ -89,7 +97,7 @@ namespace H264ToH265BatchConverter.Model
                 {
                     ConversionSucceeded = false;
 
-                    if (ConversionStatus == ConversionStatus.Failed)
+                    if (ConversionStatus == ConversionStatus.Failed || ConversionStatus == ConversionStatus.OutputAlreadyExist)
                     {
                         UpdateFileImageSource(CONST_PathImageConversionKo);
                     }
@@ -142,7 +150,7 @@ namespace H264ToH265BatchConverter.Model
         {
             string tmp = File.File.FullName;
             RemoveFile(File.File);
-            output.MoveTo(tmp);
+            output.MoveTo(tmp, true);
         }
 
         internal void Converter_OnProgressChanged(double percentage)
