@@ -7,7 +7,7 @@
         xmlns:controls="clr-namespace:H264ToH265BatchConverter.Controls"
         mc:Ignorable="d"
         Closing="Window_Closing"
-        Title="Conversion tool" Height="720" Width="1280">
+        Title="Conversion tool" Height="720" Width="1280" Icon="/Resources/conversionAlreadyDone.ico">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
